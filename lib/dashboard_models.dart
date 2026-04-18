@@ -19,8 +19,8 @@ class DashboardSummary {
   });
 
   factory DashboardSummary.fromJson(Map<String, dynamic> json) => DashboardSummary(
-    todaySalesCents: ((json['total_sales_today'] ?? 0) as num * 100).round(),
-    activeDebtsTotalCents: ((json['active_debts_total'] ?? 0) as num * 100).round(),
+    todaySalesCents: (((json['total_sales_today'] ?? 0) as num) * 100).round(),
+    activeDebtsTotalCents: (((json['active_debts_total'] ?? 0) as num) * 100).round(),
     lowStockCount: (json['low_stock_count'] ?? 0) as int,
     salesTrend7d: (json['sales_chart_7d'] as List? ?? [])
         .map((e) => DailySalesTrend.fromJson(e))
@@ -44,7 +44,7 @@ class DailySalesTrend {
 
   factory DailySalesTrend.fromJson(Map<String, dynamic> json) => DailySalesTrend(
     date: DateTime.parse(json['date']),
-    revenueCents: ((json['revenue'] ?? 0) as num * 100).round(),
+    revenueCents: (((json['revenue'] ?? 0) as num) * 100).round(),
   );
 
   double get revenue => revenueCents / 100;
@@ -65,6 +65,6 @@ class TopProduct {
   factory TopProduct.fromJson(Map<String, dynamic> json) => TopProduct(
     productName: json['product_name'] ?? 'Unknown',
     totalQtySold: (json['total_qty_sold'] ?? 0) as int,
-    totalRevenueCents: ((json['total_revenue'] ?? 0) as num * 100).round(),
+    totalRevenueCents: (((json['total_revenue'] ?? 0) as num) * 100).round(),
   );
 }

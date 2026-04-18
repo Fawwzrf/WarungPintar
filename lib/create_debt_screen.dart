@@ -19,8 +19,8 @@ class _CartItem {
   final String name;
   final int priceCents;
   final int maxStock;
-  int qty;
-  _CartItem({required this.productId, required this.name, required this.priceCents, required this.maxStock, this.qty = 1});
+  int qty = 1;
+  _CartItem({required this.productId, required this.name, required this.priceCents, required this.maxStock});
   int get subtotalCents => priceCents * qty;
 }
 
@@ -95,9 +95,11 @@ class _CreateDebtScreenState extends ConsumerState<CreateDebtScreen> {
       final kasbonError = KasbonException.parse(e);
       // [FIX] Reset submitted on error so user can retry after fixing the issue
       _submitted = false;
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(kasbonError.userMessage), backgroundColor: Colors.red[700]),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(kasbonError.userMessage), backgroundColor: Colors.red[700]),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }

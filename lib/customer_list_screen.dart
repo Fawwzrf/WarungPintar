@@ -40,9 +40,11 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
         await ref.read(debtServiceProvider).saveCustomer(result);
         ref.read(customerListProvider.notifier).load(storeId: widget.storeId);
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menyimpan: ${KasbonException.parse(e).userMessage}')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal menyimpan: ${KasbonException.parse(e).userMessage}')),
+          );
+        }
       }
     }
   }

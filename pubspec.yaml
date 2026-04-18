@@ -43,6 +43,7 @@ dependencies:
   csv: ^6.0.0
   pdf: ^3.10.8
   image_picker: ^1.2.1
+  hive: ^2.2.3
 
 dev_dependencies:
   flutter_test:

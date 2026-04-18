@@ -92,7 +92,7 @@ class _StockFormScreenState extends ConsumerState<StockFormScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _reason, decoration: const InputDecoration(labelText: 'Alasan', border: OutlineInputBorder()),
+                initialValue: _reason, decoration: const InputDecoration(labelText: 'Alasan', border: OutlineInputBorder()),
                 // [FIX] Filter reason dropdown options based on whether adding or reducing
                 items: (_isAddition ? ['restock', 'correction'] : ['sale', 'correction', 'debt'])
                     .map((r) => DropdownMenuItem(value: r, child: Text(r.toUpperCase()))).toList(),

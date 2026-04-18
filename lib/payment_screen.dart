@@ -72,10 +72,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       // [FIX] Parse raw Postgres error into user-friendly message
       final kasbonError = KasbonException.parse(e);
       // Reset submission flag only for known client-recoverable errors
-      _submitted = false;
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(kasbonError.userMessage), backgroundColor: Colors.red[700]),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(kasbonError.userMessage), backgroundColor: Colors.red[700]),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -106,7 +107,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            value: _method,
+            initialValue: _method,
             decoration: const InputDecoration(labelText: 'Metode Pembayaran', border: OutlineInputBorder()),
             items: ['cash', 'transfer', 'qris'].map((m) => DropdownMenuItem(value: m, child: Text(m.toUpperCase()))).toList(),
             onChanged: (v) => setState(() => _method = v!),

@@ -132,7 +132,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 const SizedBox(height: 12),
                 // Category
                 DropdownButtonFormField<String>(
-                  value: _category, decoration: const InputDecoration(labelText: 'Kategori', border: OutlineInputBorder()),
+                  initialValue: _category, decoration: const InputDecoration(labelText: 'Kategori', border: OutlineInputBorder()),
                   items: ['Makanan', 'Minuman', 'Harian'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                   onChanged: (v) => setState(() => _category = v),
                 ),

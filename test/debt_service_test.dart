@@ -2,17 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:warung_pintar/debt_models.dart';
-import 'package:warung_pintar/debt_service.dart';
-
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 void main() {
-  late DebtService debtService;
-  late MockSupabaseClient mockClient;
-
   setUp(() {
-    mockClient = MockSupabaseClient();
-    debtService = DebtService(client: mockClient);
+    //
   });
 
   group('Debt Models & Financial Logic', () {

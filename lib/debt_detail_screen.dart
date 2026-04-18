@@ -49,7 +49,7 @@ class _DebtDetailScreenState extends ConsumerState<DebtDetailScreen> {
     buffer.writeln('\nDetail Barang:');
     for (var item in debt.items!) {
       final subtotal = (item.subtotalCents / 100).toStringAsFixed(0);
-      buffer.writeln('- ${item.productName ?? 'Produk'}: ${item.quantity} x Rp ${(item.priceCents / 100).toStringAsFixed(0)} = Rp $subtotal');
+      buffer.writeln('- ${item.productName ?? 'Produk'}: ${item.quantity} x Rp ${(item.priceAtTimeCents / 100).toStringAsFixed(0)} = Rp $subtotal');
     }
     buffer.writeln('\nTOTAL   : Rp ${debt.totalAmount.toStringAsFixed(0)}');
     // [FIX] Corrected: debt.paidAmount (camelCase), not debt.paid_amount
@@ -96,7 +96,7 @@ class _DebtDetailScreenState extends ConsumerState<DebtDetailScreen> {
 
           return Column(children: [
             Container(
-              padding: const EdgeInsets.all(24), width: double.infinity, color: statusColor.withOpacity(0.1),
+              padding: const EdgeInsets.all(24), width: double.infinity, color: statusColor.withAlpha(25),
               child: Column(children: [
                 Chip(label: Text(debt.status.toUpperCase()), backgroundColor: statusColor, labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
@@ -113,7 +113,7 @@ class _DebtDetailScreenState extends ConsumerState<DebtDetailScreen> {
                 else
                   ...debt.items!.map((i) => ListTile(
                     title: Text(i.productName ?? 'Produk'),
-                    subtitle: Text('${i.quantity} x Rp ${(i.priceCents / 100).toStringAsFixed(0)}'),
+                    subtitle: Text('${i.quantity} x Rp ${(i.priceAtTimeCents / 100).toStringAsFixed(0)}'),
                     trailing: Text('Rp ${(i.subtotalCents / 100).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                   )),
                 const Divider(),

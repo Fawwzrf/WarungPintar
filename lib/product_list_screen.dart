@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'product_service.dart';
@@ -18,7 +19,6 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
   final _scrollController = ScrollController();
   Timer? _debounce;
   String? _selectedCategory;
-  int _currentPage = 0;
   bool _hasMore = true;
 
   @override
@@ -39,7 +39,6 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
 
   // [FIX] Returns Future<void> so RefreshIndicator can await it properly
   Future<void> _refresh() async {
-    _currentPage = 0;
     _hasMore = true;
     await ref.read(productsPrv.notifier).load(
       storeId: widget.storeId,
@@ -50,12 +49,10 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
 
   void _onScroll() {
     if (_hasMore && _scrollController.position.atEdge && _scrollController.position.pixels != 0) {
-      _currentPage++;
       ref.read(productsPrv.notifier).load(
         storeId: widget.storeId,
         search: _searchController.text.isEmpty ? null : _searchController.text,
         category: _selectedCategory,
-        // page: _currentPage  // Enable when notifier supports append pagination
       );
     }
   }
