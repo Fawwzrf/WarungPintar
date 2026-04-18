@@ -20,28 +20,27 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
   }
 
   Future<void> _init() async {
-    try {
-      final sessionStr = await _storage.read(key: 'session');
-      if (sessionStr != null) {
-        // Supabase internally handles session restore if initialized correctly, 
-        // but we ensure session is set and valid.
-        _resetInactivityTimer();
-      }
-      state = AsyncData(_client.auth.currentUser);
-    } catch (e, st) {
-      state = AsyncError(e, st);
-    }
-    // [MED-06 FIX] Store subscription reference for disposal
+    // [FIX] Subscribe to auth state FIRST so it emits immediately and clears the loading screen.
+    // If placed after await _storage.read(), any hang in SecureStorage will cause an infinite loading screen.
     _authSub = _client.auth.onAuthStateChange.listen((data) {
       if (data.session != null) {
-        _storage.write(key: 'session', value: data.session!.accessToken);
+        _storage.write(key: 'session', value: data.session!.accessToken).catchError((_) {});
         _resetInactivityTimer();
       } else {
-        _storage.delete(key: 'session');
+        _storage.delete(key: 'session').catchError((_) {});
         _timeoutTimer?.cancel();
       }
       state = AsyncData(data.session?.user);
     });
+
+    try {
+      final sessionStr = await _storage.read(key: 'session').timeout(const Duration(seconds: 2));
+      if (sessionStr != null) {
+        _resetInactivityTimer();
+      }
+    } catch (e) {
+      // Ignore secure storage hang/timeout errors, Supabase internal auth state is the source of truth
+    }
   }
 
   void _resetInactivityTimer() {
