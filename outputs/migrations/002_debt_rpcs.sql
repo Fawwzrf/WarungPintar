@@ -31,8 +31,10 @@ BEGIN
 
     -- 3. Pre-calculate total and validate items (Stock & Price)
     FOR v_item IN SELECT * FROM jsonb_to_recordset(p_items) AS x(product_id UUID, quantity INTEGER) LOOP
+        -- [CRIT-02 FIX] FOR UPDATE acquires exclusive row lock to prevent concurrent stock decrement race
         SELECT stock, selling_price INTO v_product_stock, v_product_price
-        FROM products WHERE id = v_item.product_id AND store_id = p_store_id AND is_active = TRUE;
+        FROM products WHERE id = v_item.product_id AND store_id = p_store_id AND is_active = TRUE
+        FOR UPDATE;
         
         IF NOT FOUND THEN RAISE EXCEPTION 'PRODUCT_NOT_FOUND %', v_item.product_id; END IF;
         IF v_product_stock < v_item.quantity THEN RAISE EXCEPTION 'INSUFFICIENT_STOCK %', v_item.product_id; END IF;
@@ -84,9 +86,12 @@ DECLARE
     v_status TEXT;
 BEGIN
     -- 1. Get Debt Details
-    SELECT customer_id, remaining_amount, paid_amount, total_amount 
+    -- [CRIT-03 FIX] Compute remaining dynamically (total_amount - paid_amount) instead of reading
+    -- the GENERATED column, and add FOR UPDATE lock to prevent concurrent payment race
+    SELECT customer_id, (total_amount - paid_amount), paid_amount, total_amount 
     INTO v_customer_id, v_remaining, v_new_paid, v_total
-    FROM debts WHERE id = p_debt_id;
+    FROM debts WHERE id = p_debt_id
+    FOR UPDATE;
 
     IF NOT FOUND THEN RAISE EXCEPTION 'DEBT_NOT_FOUND'; END IF;
     IF p_amount > v_remaining THEN RAISE EXCEPTION 'PAYMENT_EXCEEDS_REMAINING'; END IF;

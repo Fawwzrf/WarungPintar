@@ -1,0 +1,80 @@
+name: WarungPintar CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build_test_deploy:
+    name: Build, Test & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java (Required for Android build)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Run Lint (Analyze Dart code)
+        run: flutter analyze
+
+      - name: Run Unit Tests
+        run: flutter test
+
+      - name: Build Release APK
+        # Only build and deploy on pushes to main, not on PRs
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          flutter build apk --release \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Upload APK as GitHub Artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: warungpintar-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Deploy to Supabase Storage (App Distribution)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} 
+          BUCKET_NAME: 'app-releases'
+        run: |
+          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+          FILE_NAME="WarungPintar-v2.0-${GITHUB_SHA::7}.apk"
+          
+          # Upload via Supabase Storage REST API
+          # Uses service role key to bypass RLS for administrative uploads
+          echo "Uploading $FILE_NAME to Supabase Storage bucket: $BUCKET_NAME..."
+          
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            "${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${FILE_NAME}" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            --data-binary "@${APK_PATH}")
+            
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 201 ]; then
+            echo "✅ Successfully deployed to Supabase: ${FILE_NAME}"
+          else
+            echo "❌ Failed to deploy to Supabase. HTTP Status: $HTTP_STATUS"
+            exit 1
+          fi

@@ -102,11 +102,13 @@ USING (store_id IN (
   WHERE user_id = auth.uid()
 ));
 
-CREATE POLICY "admin_can_insert_customers"
+-- [MED-04 FIX] Changed from Admin-only to all members.
+-- Cashiers need to create customers during kasbon flow (PRD requirement).
+CREATE POLICY "members_can_insert_customers"
 ON customers FOR INSERT
 WITH CHECK (store_id IN (
   SELECT store_id FROM store_members
-  WHERE user_id = auth.uid() AND role = 'Admin'
+  WHERE user_id = auth.uid()
 ));
 
 CREATE POLICY "admin_can_update_customers"
