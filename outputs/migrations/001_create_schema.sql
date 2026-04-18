@@ -173,16 +173,4 @@ CREATE INDEX idx_stock_mutations_created_at ON public.stock_mutations(created_at
 CREATE INDEX idx_store_members_store_id ON public.store_members(store_id);
 CREATE INDEX idx_store_members_user_id ON public.store_members(user_id);
 
--- =========== DOWN ===========
-
-DROP TABLE IF EXISTS public.store_members;
-DROP TABLE IF EXISTS public.stock_mutations;
-DROP TABLE IF EXISTS public.sales_log;
-DROP TABLE IF EXISTS public.debt_payments;
-DROP TABLE IF EXISTS public.debt_items;
-DROP TABLE IF EXISTS public.debts;
-DROP TABLE IF EXISTS public.products;
-DROP TABLE IF EXISTS public.customers;
-DROP TABLE IF EXISTS public.stores;
-
-DROP FUNCTION IF EXISTS public.update_updated_at();
+-- End of schema creation

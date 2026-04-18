@@ -117,6 +117,4 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- =========== DOWN ===========
-DROP FUNCTION IF EXISTS create_debt_v1(UUID, UUID, JSONB);
-DROP FUNCTION IF EXISTS record_payment_v1(UUID, NUMERIC, TEXT);
+-- End of RPC creation
