@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 @immutable
 class DashboardSummary {
   final int todaySalesCents;
+  final int todayProfitCents;
+  final int todayExpensesCents;
   final int activeDebtsTotalCents;
   final int activeDebtsCount;
   final int lowStockCount;
@@ -12,6 +14,8 @@ class DashboardSummary {
 
   const DashboardSummary({
     required this.todaySalesCents,
+    this.todayProfitCents = 0,
+    this.todayExpensesCents = 0,
     required this.activeDebtsTotalCents,
     this.activeDebtsCount = 0,
     required this.lowStockCount,
@@ -23,6 +27,8 @@ class DashboardSummary {
   // Keys match new RPC: get_dashboard_summary
   factory DashboardSummary.fromJson(Map<String, dynamic> json) => DashboardSummary(
     todaySalesCents: (((json['today_sales'] ?? json['total_sales_today'] ?? 0) as num) * 100).round(),
+    todayProfitCents: (((json['today_profit'] ?? 0) as num) * 100).round(),
+    todayExpensesCents: (((json['today_expenses'] ?? 0) as num) * 100).round(),
     activeDebtsTotalCents: (((json['active_debts_total'] ?? 0) as num) * 100).round(),
     activeDebtsCount: (json['active_debts_count'] ?? 0) as int,
     lowStockCount: (json['low_stock_count'] ?? 0) as int,
@@ -36,6 +42,8 @@ class DashboardSummary {
   );
 
   double get todaySales => todaySalesCents / 100;
+  double get todayProfit => todayProfitCents / 100;
+  double get todayExpenses => todayExpensesCents / 100;
   double get activeDebtsTotal => activeDebtsTotalCents / 100;
 }
 

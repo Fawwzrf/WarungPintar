@@ -4,6 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'dashboard_service.dart';
 import 'dashboard_models.dart';
+import 'create_sale_screen.dart';
+import 'expense_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   final String storeId;
@@ -56,6 +58,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           _buildSummaryCards(summary),
           const SizedBox(height: 24),
+          _buildFastActionButtons(context),
+          const SizedBox(height: 24),
           _buildAiPredictionList(),
           const SizedBox(height: 24),
           _buildSalesChart(summary),
@@ -81,29 +85,74 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         runSpacing: 12,
         children: [
           _SummaryCard(
-            title: 'Penjualan Hari Ini',
+            title: 'Laba Bersih Hari Ini',
+            value: 'Rp ${NumberFormat('#,###').format(summary.todayProfit)}',
+            color: summary.todayProfit >= 0 ? Colors.green : Colors.red,
+            icon: Icons.monetization_on,
+            width: cardWidth,
+          ),
+          _SummaryCard(
+            title: 'Omzet Penjualan',
             value: 'Rp ${NumberFormat('#,###').format(summary.todaySales)}',
             color: Colors.blue,
-            icon: Icons.payments,
+            icon: Icons.storefront,
+            width: cardWidth,
+          ),
+          _SummaryCard(
+            title: 'Pengeluaran Laci',
+            value: 'Rp ${NumberFormat('#,###').format(summary.todayExpenses)}',
+            color: Colors.orange,
+            icon: Icons.outbound,
             width: cardWidth,
           ),
           _SummaryCard(
             title: 'Total Piutang Aktif',
             value: 'Rp ${NumberFormat('#,###').format(summary.activeDebtsTotal)}',
-            color: Colors.orange,
+            color: Colors.purple,
             icon: Icons.account_balance_wallet,
-            width: cardWidth,
-          ),
-          _SummaryCard(
-            title: 'Stok Menipis',
-            value: '${summary.lowStockCount} Produk',
-            color: summary.lowStockCount > 0 ? Colors.red : Colors.green,
-            icon: Icons.inventory_2,
             width: cardWidth,
           ),
         ],
       );
     });
+  }
+
+  Widget _buildFastActionButtons(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.point_of_sale, size: 24),
+            label: const Text('Kasir Penjualan', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue[700],
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+            ),
+            onPressed: () => Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (_) => CreateSaleScreen(storeId: widget.storeId))
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.account_balance_wallet_outlined, size: 24),
+            label: const Text('Pengeluaran', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange[700],
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+            ),
+            onPressed: () => Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (_) => ExpenseScreen(storeId: widget.storeId))
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildSalesChart(DashboardSummary summary) {
