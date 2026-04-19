@@ -16,12 +16,11 @@ class ReportService {
   ReportService([SupabaseClient? client]) : _supabase = client ?? Supabase.instance.client;
 
   /// Fetches sales data for a specific date range.
-  /// [MED-02 FIX] Added storeId filter via inner join to prevent cross-store data leakage
   Future<List<Map<String, dynamic>>> fetchSalesReport(DateTime start, DateTime end, {required String storeId}) async {
     final response = await _supabase
         .from('sales_log')
-        .select('*, products!inner(name, cost_price, selling_price, store_id)')
-        .eq('products.store_id', storeId)
+        .select('*, products(name, cost_price, selling_price)')
+        .eq('store_id', storeId)
         .gte('created_at', start.toIso8601String())
         .lte('created_at', end.toIso8601String())
         .order('created_at', ascending: false);
@@ -29,18 +28,20 @@ class ReportService {
     return List<Map<String, dynamic>>.from(response);
   }
 
-  /// Fetches active debt summary.
-  /// [MED-02 FIX] Added storeId filter via inner join with customers
+  /// Fetches active debt data for export.
   Future<List<Map<String, dynamic>>> fetchDebtReport({required String storeId}) async {
     final response = await _supabase
         .from('debts')
-        .select('*, customers!inner(name, phone, store_id)')
-        .eq('customers.store_id', storeId)
-        .not('status', 'eq', 'paid')
-        .order('created_at', ascending: false);
+        .select('*, customers(name, phone)')
+        .eq('store_id', storeId)
+        .neq('status', 'paid')
+        .order('remaining_amount', ascending: false);
 
     return List<Map<String, dynamic>>.from(response);
   }
+
+
+
 
   /// Generates a CSV file for sales data.
   Future<XFile> generateSalesCSV(List<Map<String, dynamic>> data) async {

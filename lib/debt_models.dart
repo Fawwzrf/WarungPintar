@@ -11,16 +11,17 @@ class Customer {
   final String storeId;
   final String name;
   final String? phone;
-  // [FIX] Store as integer cents for exact arithmetic
+  final String? address;
+  final String creditLabel; // 'trusted', 'normal', 'watch'
   final int totalDebtCents;
   final int maxCreditCents;
 
   const Customer({
     required this.id, required this.storeId, required this.name,
-    this.phone, required this.totalDebtCents, required this.maxCreditCents,
+    this.phone, this.address, this.creditLabel = 'normal',
+    required this.totalDebtCents, required this.maxCreditCents,
   });
 
-  // Convenience getters for display
   double get totalDebt => totalDebtCents / 100;
   double get maxCredit => maxCreditCents / 100;
 
@@ -29,7 +30,8 @@ class Customer {
     storeId: json['store_id'] as String,
     name: json['name'] as String,
     phone: json['phone'] as String?,
-    // [FIX] Convert numeric to cents integer to eliminate double precision issues
+    address: json['address'] as String?,
+    creditLabel: (json['credit_label'] as String?) ?? 'normal',
     totalDebtCents: ((json['total_debt'] as num) * 100).round(),
     maxCreditCents: ((json['max_credit'] as num) * 100).round(),
   );
@@ -38,6 +40,7 @@ class Customer {
     'store_id': storeId,
     'name': name,
     'phone': phone?.isNotEmpty == true ? phone : null,
+    'address': address?.isNotEmpty == true ? address : null,
     'max_credit': maxCreditCents / 100,
   };
 }
@@ -46,22 +49,25 @@ class Customer {
 class Debt {
   final String id;
   final String customerId;
-  // [FIX] Integer cents representation for all amounts
+  final String? storeId;
+  final String? createdBy;
   final int totalAmountCents;
   final int paidAmountCents;
   final int remainingAmountCents;
   final String status;
   final DateTime createdAt;
+  final DateTime? dueDate;
+  final String? notes;
   final List<DebtItem>? items;
 
   const Debt({
     required this.id, required this.customerId,
+    this.storeId, this.createdBy,
     required this.totalAmountCents, required this.paidAmountCents,
     required this.remainingAmountCents, required this.status,
-    required this.createdAt, this.items,
+    required this.createdAt, this.dueDate, this.notes, this.items,
   });
 
-  // Convenience getters for display
   double get totalAmount => totalAmountCents / 100;
   double get paidAmount => paidAmountCents / 100;
   double get remainingAmount => remainingAmountCents / 100;
@@ -69,11 +75,15 @@ class Debt {
   factory Debt.fromJson(Map<String, dynamic> json) => Debt(
     id: json['id'] as String,
     customerId: json['customer_id'] as String,
+    storeId: json['store_id'] as String?,
+    createdBy: json['created_by'] as String?,
     totalAmountCents: ((json['total_amount'] as num) * 100).round(),
     paidAmountCents: ((json['paid_amount'] as num) * 100).round(),
     remainingAmountCents: ((json['remaining_amount'] as num) * 100).round(),
     status: json['status'] as String,
     createdAt: DateTime.parse(json['created_at'] as String),
+    dueDate: json['due_date'] != null ? DateTime.tryParse(json['due_date']) : null,
+    notes: json['notes'] as String?,
     items: json['debt_items'] != null
         ? (json['debt_items'] as List).map((i) => DebtItem.fromJson(i)).toList()
         : null,
@@ -139,12 +149,10 @@ class KasbonException {
 
   static KasbonException parse(dynamic e) {
     final msg = e.toString();
-    if (msg.contains('INSUFFICIENT_STOCK')) return const KasbonException('Stok produk tidak mencukupi.');
-    if (msg.contains('CREDIT_LIMIT_EXCEEDED')) return const KasbonException('Limit kredit pelanggan terlampaui.');
-    if (msg.contains('PAYMENT_EXCEEDS_REMAINING')) return const KasbonException('Jumlah bayar melebihi sisa hutang.');
-    if (msg.contains('DEBT_NOT_FOUND')) return const KasbonException('Data kasbon tidak ditemukan.');
-    if (msg.contains('CUSTOMER_NOT_FOUND')) return const KasbonException('Data pelanggan tidak ditemukan.');
-    if (msg.contains('UNAUTHORIZED_MEMBER')) return const KasbonException('Anda tidak memiliki akses ke toko ini.');
+    if (msg.contains('Stok') && msg.contains('tidak cukup')) return const KasbonException('Stok produk tidak mencukupi.');
+    if (msg.contains('batas kredit')) return const KasbonException('Limit kredit pelanggan terlampaui.');
+    if (msg.contains('melebihi sisa')) return const KasbonException('Jumlah bayar melebihi sisa hutang.');
+    if (msg.contains('tidak ditemukan')) return KasbonException(msg);
     if (msg.contains('network') || msg.contains('SocketException')) return const KasbonException('Tidak ada koneksi internet. Silakan coba lagi.');
     return const KasbonException('Terjadi kesalahan. Silakan coba lagi.');
   }

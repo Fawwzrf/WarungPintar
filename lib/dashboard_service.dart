@@ -12,6 +12,10 @@ final dashboardSummaryProvider = StateNotifierProvider<DashboardNotifier, AsyncV
   return DashboardNotifier(service);
 });
 
+final aiRestockPredictionProvider = FutureProvider.family<AIRestockPrediction?, String>((ref, storeId) async {
+  return await ref.watch(dashboardServiceProvider).getAiRestockPrediction(storeId);
+});
+
 class DashboardService {
   final SupabaseClient _client;
   // [MED-01 FIX] Support dependency injection for testability
@@ -20,23 +24,33 @@ class DashboardService {
 
   Future<DashboardSummary> getSummary(String storeId) async {
     try {
-      // Assuming a server-side RPC or a complex join as described in the API spec
       final res = await _client.rpc('get_dashboard_summary', params: {'p_store_id': storeId});
       final summary = DashboardSummary.fromJson(res);
       
-      // Cache for offline
       final box = await Hive.openBox('cache');
       await box.put(_cacheKey, jsonEncode(res));
       
       return summary;
     } catch (e) {
-      // Fallback to cache if offline
       final box = await Hive.openBox('cache');
       final cachedStr = box.get(_cacheKey);
       if (cachedStr != null) {
         return DashboardSummary.fromJson(jsonDecode(cachedStr));
       }
       rethrow;
+    }
+  }
+
+  Future<AIRestockPrediction?> getAiRestockPrediction(String storeId) async {
+    try {
+      final res = await _client.functions.invoke('restock-prediction', body: {'store_id': storeId});
+      if (res.status == 200 && res.data != null) {
+        return AIRestockPrediction.fromJson(res.data);
+      }
+      return null;
+    } catch (e) {
+      // In offline mode or if edge function fails, just return null
+      return null;
     }
   }
 

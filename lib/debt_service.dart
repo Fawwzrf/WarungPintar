@@ -32,11 +32,11 @@ class DebtService {
     }
   }
 
-  // --- Debts ---
+  // --- Debts (new schema: debts has store_id directly) ---
   Future<List<Debt>> getDebts({
     required String storeId, String? customerId, String? status, int page = 0,
   }) async {
-    var query = _client.from('debts').select('*, customers!inner(*)').eq('customers.store_id', storeId);
+    var query = _client.from('debts').select().eq('store_id', storeId);
     if (customerId != null) query = query.eq('customer_id', customerId);
     if (status != null) query = query.eq('status', status);
     final res = await query.range(page * 20, (page + 1) * 20 - 1).order('created_at', ascending: false);
@@ -48,23 +48,25 @@ class DebtService {
     return Debt.fromJson(Map<String, dynamic>.from(res));
   }
 
-  // --- RPC Actions ---
-  // [NOTE] Credit limit and stock validation are enforced EXCLUSIVELY in `create_debt_v1`
-  // using SECURITY DEFINER. Client-side checks are UX hints only — not security gates.
+  // --- RPC: Create debt with items (matches new SQL function name) ---
   Future<String> createDebt({
-    required String customerId, required String storeId, required List<Map<String, dynamic>> items,
+    required String customerId, required String storeId,
+    required List<Map<String, dynamic>> items, String? notes,
   }) async {
-    final res = await _client.rpc('create_debt_v1', params: {
-      'p_customer_id': customerId, 'p_store_id': storeId, 'p_items': items,
+    final res = await _client.rpc('create_debt_with_items', params: {
+      'p_customer_id': customerId,
+      'p_store_id': storeId,
+      'p_items': items,
+      'p_notes': notes,
     });
     return res as String;
   }
 
+  // --- RPC: Record payment (matches new SQL function name) ---
   Future<void> recordPayment({required String debtId, required int amountCents, required String method}) async {
-    // [FIX] Send as double to DB (NUMERIC), but amount was validated server-side by RPC
-    await _client.rpc('record_payment_v1', params: {
+    await _client.rpc('record_debt_payment', params: {
       'p_debt_id': debtId,
-      'p_amount': amountCents / 100, // Convert back to decimal for NUMERIC(12,2) DB column
+      'p_amount': amountCents / 100,
       'p_method': method,
     });
   }
@@ -72,6 +74,16 @@ class DebtService {
   Future<List<DebtPayment>> getPayments(String debtId) async {
     final res = await _client.from('debt_payments').select().eq('debt_id', debtId).order('created_at', ascending: false);
     return (res as List).map((e) => DebtPayment.fromJson(Map<String, dynamic>.from(e))).toList();
+  }
+
+  // --- Fetch debt report (for report export) ---
+  Future<List<Map<String, dynamic>>> fetchDebtReport({required String storeId}) async {
+    final res = await _client.from('debts')
+        .select('*, customers(name, phone)')
+        .eq('store_id', storeId)
+        .neq('status', 'paid')
+        .order('remaining_amount', ascending: false);
+    return (res as List).map((e) => Map<String, dynamic>.from(e)).toList();
   }
 }
 

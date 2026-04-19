@@ -56,6 +56,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           _buildSummaryCards(summary),
           const SizedBox(height: 24),
+          _buildAiPredictionList(),
+          const SizedBox(height: 24),
           _buildSalesChart(summary),
           const SizedBox(height: 24),
           _buildTopProducts(summary),
@@ -195,6 +197,84 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Center(child: Text('Belum ada data penjualan.'))),
         ],
       ),
+    );
+  }
+
+  Widget _buildAiPredictionList() {
+    final aiState = ref.watch(aiRestockPredictionProvider(widget.storeId));
+    
+    return aiState.when(
+      data: (prediction) {
+        if (prediction == null || prediction.recommendations.isEmpty) return const SizedBox.shrink();
+        
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [Colors.purple[50]!, Colors.blue[50]!]),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.purple[100]!),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: Colors.purple[700]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Rekomendasi Restock AI',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.purple[900]),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(prediction.summary, style: TextStyle(fontSize: 12, color: Colors.purple[800])),
+              const SizedBox(height: 16),
+              ...prediction.recommendations.map((rec) => Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                  child: Row(
+                    children: [
+                      Icon(
+                        rec.urgency == 'critical' ? Icons.warning_amber_rounded 
+                            : (rec.urgency == 'soon' ? Icons.access_time : Icons.info_outline),
+                        color: rec.urgency == 'critical' ? Colors.red : (rec.urgency == 'soon' ? Colors.orange : Colors.blue),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(rec.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text(rec.reason, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('+${rec.suggestedRestockQty}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                          const Text('Saran Beli', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              )),
+            ],
+          ),
+        );
+      },
+      loading: () => const Center(child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: CircularProgressIndicator(),
+      )),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }

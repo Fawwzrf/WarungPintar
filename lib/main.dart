@@ -23,8 +23,8 @@ class StoreMembership {
   final String storeId;
   final String role; // 'Admin' or 'Cashier'
   const StoreMembership({required this.storeId, required this.role});
-  bool get isAdmin => role == 'Admin';
-  bool get isCashier => role == 'Cashier';
+  bool get isAdmin => role == 'admin';
+  bool get isCashier => role == 'cashier';
 }
 
 final storeMembershipProvider = FutureProvider<StoreMembership?>((ref) async {

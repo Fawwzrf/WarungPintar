@@ -1,0 +1,155 @@
+# Rencana Overhaul Total WarungPintar Lite v2.0
+
+## Tujuan
+Memperbaiki seluruh sistem WarungPintar secara menyeluruh: bersihkan folder & file, reset database dari nol, perbaiki semua bug, implementasi fitur AI dari PRD, lalu deploy.
+
+> [!IMPORTANT]
+> Rencana ini melibatkan **RESET DATABASE TOTAL** dan perubahan besar pada kode. Pastikan Anda siap sebelum meng-approve.
+
+## User Review Required
+
+> [!WARNING]
+> **Database akan di-reset total.** Semua data produk, pelanggan, kasbon yang sudah ada akan hilang. Ini diperlukan karena skema database saat ini sudah tidak konsisten (trigger lama masih jalan, kolom `unit` belum ada, role check constraint salah, dsb).
+
+> [!CAUTION]
+> **Supabase Edge Functions** membutuhkan `GEMINI_API_KEY`. Anda perlu menyediakan API key Google Gemini untuk fitur AI (prediksi restock & laporan tren). Jika belum punya, fitur AI akan di-skip dan bisa ditambahkan nanti.
+
+---
+
+## Fase 1: Bersihkan Struktur Folder & File
+
+### [DELETE] File-file yang tidak berguna
+Hapus file berikut yang merupakan artefak development dan bukan bagian dari kode produksi:
+
+| File/Folder | Alasan Hapus |
+|---|---|
+| `lib/code_review.json` | Artefak review, bukan kode |
+| `lib/kasbon_security_review.json` | Artefak review, bukan kode |
+| `lib/restock_prediction.ts` | File TypeScript salah tempat (seharusnya di `supabase/functions/`) |
+| `cache/` | Cache dev lokal, tidak perlu di-repo |
+| `prompts/` | Prompt AI generator, bukan kode |
+| `prd_extracted.txt` | Duplikat PRD, sudah ada .docx |
+| `prd_summary.json` | Artefak AI, bukan kode |
+| `outputs/schema_v1.sql` | Skema lama, digantikan oleh migrasi baru |
+| `outputs/rls_policies.sql` | Digantikan oleh v2 |
+| `outputs/api_spec.yaml` | Dokumen API spec, pindah ke docs/ |
+| `test_backup/` | Folder kosong |
+| `docs/code_review.md` | Artefak review |
+
+### Struktur folder akhir yang bersih:
+```
+WarungPintar/
+├── android/
+├── ios/
+├── lib/
+│   ├── models/          # Data models
+│   ├── services/        # Business logic & API
+│   ├── screens/         # UI screens
+│   └── main.dart
+├── supabase/
+│   └── functions/
+│       └── restock-prediction/  # Edge Function (Deno/TS)
+├── sql/                 # Semua SQL migration (1 source of truth)
+│   ├── 001_schema.sql
+│   ├── 002_rpcs.sql
+│   ├── 003_rls.sql
+│   └── 004_auth_trigger.sql
+├── test/
+├── docs/
+│   └── PRD_WarungPintar_Lite_v2.0.docx
+├── pubspec.yaml
+└── README.md
+```
+
+---
+
+## Fase 2: Reset & Rebuild Database dari Nol
+
+### Cara Reset Database di Supabase
+1. Buka Supabase Dashboard → **SQL Editor**
+2. Jalankan script `sql/000_reset_everything.sql` yang akan saya buat:
+   - `DROP` semua tabel, function, trigger yang ada
+   - Buat ulang semuanya dari nol dengan skema yang **100% sesuai PRD**
+
+### Perubahan Skema vs. PRD
+Skema saat ini **tidak sesuai PRD** di beberapa tempat kritis:
+
+| Masalah | Perbaikan |
+|---|---|
+| `store_members.role` check constraint `'Admin'/'Cashier'` | Ubah ke `'admin'/'cashier'` (lowercase) sesuai PRD §5.3 |
+| Kolom `unit` tidak ada di `products` | Tambahkan `unit TEXT DEFAULT 'pcs'` |
+| Kolom `barcode` tidak ada di `products` | Tambahkan `barcode TEXT` |
+| Kolom `address`, `credit_label` tidak ada di `customers` | Tambahkan sesuai PRD |
+| Kolom `store_id`, `created_by`, `due_date`, `notes` tidak ada di `debts` | Tambahkan sesuai PRD |
+| Kolom `received_by` tidak ada di `debt_payments` | Tambahkan sesuai PRD |
+| Kolom `store_id`, `cashier_id`, `cost_price_at_time`, `selling_price_at_time` tidak ada di `sales_log` | Tambahkan sesuai PRD |
+| Kolom `actor_id`, `notes` tidak ada di `stock_mutations` | Tambahkan sesuai PRD |
+| Auth trigger membuat semua user jadi Admin di toko yang sama | Buat trigger yang benar: 1 akun = 1 toko baru |
+
+### [NEW] `sql/000_reset_everything.sql`
+Script master yang: DROP ALL → CREATE ALL → INSERT HELPER FUNCTIONS → SETUP RLS → SETUP AUTH TRIGGER
+
+---
+
+## Fase 3: Perbaiki Kode Dart (Sesuaikan dengan Skema Baru)
+
+### Model Updates
+- **Product**: tambah `barcode`, `unit` (sudah ada)
+- **Customer**: tambah `address`, `creditLabel`
+- **Debt**: tambah `storeId`, `createdBy`, `dueDate`, `notes`
+- **DebtPayment**: tambah `receivedBy`
+- **Role check**: ubah dari `'Admin'/'Cashier'` → `'admin'/'cashier'` di semua tempat
+
+### UI/UX untuk Pemula (PRD §8)
+- Login screen: tambah ilustrasi & teks panduan
+- Dashboard: tambah card "Selamat Datang" jika data masih kosong (onboarding)
+- Semua error message: dalam Bahasa Indonesia yang jelas
+- Aksesibilitas: minimal font 14sp
+
+---
+
+## Fase 4: Implementasi Fitur AI (PRD §4.5)
+
+### [NEW] `supabase/functions/restock-prediction/index.ts`
+Edge Function yang:
+1. Mengambil data penjualan 30 hari terakhir
+2. Mengirim ke Gemini API
+3. Mengembalikan "Top 5 Produk yang Perlu Segera Dibeli"
+
+### [MODIFY] `lib/screens/dashboard_screen.dart`
+Tambah card "Rekomendasi Restock AI" yang memanggil Edge Function di atas.
+
+---
+
+## Fase 5: Jalankan Test & Pastikan 0 Error
+
+1. `flutter analyze` → harus 0 issues
+2. `flutter test` → semua test harus pass
+3. Build APK release → harus sukses
+
+---
+
+## Fase 6: Deploy
+
+1. Push ke GitHub
+2. Build release APK:  
+   ```
+   flutter build apk --release --dart-define=SUPABASE_URL=xxx --dart-define=SUPABASE_ANON_KEY=yyy
+   ```
+3. Install di HP untuk final test
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- `flutter analyze` → 0 issues
+- `flutter test` → semua pass
+
+### Manual Verification
+1. Reset database via SQL Editor
+2. Install APK, daftar akun baru → toko kosong, role Admin
+3. Tambah produk (dengan unit), tambah pelanggan, buat kasbon
+4. Buat akun kasir, verify RBAC (3 tab only)
+5. Test dark mode, offline banner, WhatsApp share
+6. Test AI restock prediction (jika API key tersedia)
