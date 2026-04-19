@@ -128,6 +128,11 @@ class ProductService {
     });
   }
 
+  // [S-07 FIX] Soft delete: set is_active=false instead of hard delete (PRD §5.4)
+  Future<void> deleteProduct(String productId) async {
+    await _client.from('products').update({'is_active': false}).eq('id', productId);
+  }
+
   RealtimeChannel subscribe({
     required void Function(Product) onUpdate,
     required void Function(String deletedId) onDelete,

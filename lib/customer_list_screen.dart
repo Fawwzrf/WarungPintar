@@ -63,6 +63,12 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
           IconButton(icon: const Icon(Icons.person_add_outlined), onPressed: _addCustomer),
         ],
       ),
+      // [UI FIX] FAB for quick add customer — per PRD §8.2
+      floatingActionButton: widget.selectMode ? null : FloatingActionButton(
+        onPressed: _addCustomer,
+        tooltip: 'Tambah Pelanggan Baru',
+        child: const Icon(Icons.person_add),
+      ),
       body: Column(children: [
         Padding(
           padding: const EdgeInsets.all(8.0),
