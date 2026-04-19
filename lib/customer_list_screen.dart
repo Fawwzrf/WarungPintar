@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'debt_service.dart';
 import 'debt_models.dart';
-import 'create_debt_screen.dart';
+import 'customer_detail_screen.dart';
 
 class CustomerListScreen extends ConsumerStatefulWidget {
   final String storeId;
