@@ -10,6 +10,7 @@ import 'customer_list_screen.dart';
 import 'product_list_screen.dart';
 import 'dashboard_screen.dart';
 import 'report_screen.dart';
+import 'settings_screen.dart';
 
 // [CRIT-01 FIX] Credentials injected via --dart-define at build time.
 const _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
@@ -187,11 +188,13 @@ class _MainNavigationHubState extends ConsumerState<MainNavigationHub> {
         // [K-01 FIX] Build screens based on role
         // Admin: Dashboard, Stok, Kasbon, Laporan (4 tabs)
         // Cashier: Dashboard, Stok (read-only), Kasbon (3 tabs)
+        // [Settings] Always available for all roles — has logout
         final List<Widget> screens = [
           DashboardScreen(storeId: storeId),
           ProductListScreen(storeId: storeId, isAdmin: isAdmin),
           CustomerListScreen(storeId: storeId),
-          if (isAdmin) ReportScreen(storeId: storeId),
+          if (isAdmin) ReportScreen(storeId: storeId, isAdmin: isAdmin),
+          const SettingsScreen(),
         ];
 
         final List<NavigationDestination> destinations = [
@@ -199,9 +202,10 @@ class _MainNavigationHubState extends ConsumerState<MainNavigationHub> {
           const NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: 'Stok'),
           const NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Kasbon'),
           if (isAdmin) const NavigationDestination(icon: Icon(Icons.analytics_outlined), selectedIcon: Icon(Icons.analytics), label: 'Laporan'),
+          const NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Pengaturan'),
         ];
 
-        // Guard: if Cashier and index is out of bounds
+        // Guard: if index is out of bounds after role change
         if (_currentIndex >= screens.length) {
           _currentIndex = 0;
         }

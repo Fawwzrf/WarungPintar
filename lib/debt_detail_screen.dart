@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'debt_service.dart';
 import 'debt_models.dart';
@@ -33,31 +34,69 @@ class _DebtDetailScreenState extends ConsumerState<DebtDetailScreen> {
     });
   }
 
-  void _share(Debt debt) {
-    // [FIX] Guard against null items to prevent crash
-    if (debt.items == null || debt.items!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invoice tidak tersedia.')));
-      return;
-    }
-    
-    // [FIX] Proper date format for Indonesian users  
+  String _buildNota(Debt debt) {
     final df = DateFormat('dd MMM yyyy, HH:mm');
     final buffer = StringBuffer();
     buffer.writeln('--- NOTA KASBON ---');
     buffer.writeln('Tanggal: ${df.format(debt.createdAt)}');
-    buffer.writeln('Status: ${debt.status.toUpperCase()}');
+    buffer.writeln('Status  : ${debt.status.toUpperCase()}');
     buffer.writeln('\nDetail Barang:');
     for (var item in debt.items!) {
       final subtotal = (item.subtotalCents / 100).toStringAsFixed(0);
       buffer.writeln('- ${item.productName ?? 'Produk'}: ${item.quantity} x Rp ${(item.priceAtTimeCents / 100).toStringAsFixed(0)} = Rp $subtotal');
     }
     buffer.writeln('\nTOTAL   : Rp ${debt.totalAmount.toStringAsFixed(0)}');
-    // [FIX] Corrected: debt.paidAmount (camelCase), not debt.paid_amount
     buffer.writeln('DIBAYAR : Rp ${debt.paidAmount.toStringAsFixed(0)}');
     buffer.writeln('SISA    : Rp ${debt.remainingAmount.toStringAsFixed(0)}');
-    buffer.writeln('\nTerima kasih!');
+    buffer.writeln('\nTerima kasih! 🙏');
+    return buffer.toString();
+  }
 
-    Share.share(buffer.toString());
+  void _share(Debt debt) {
+    if (debt.items == null || debt.items!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invoice tidak tersedia.')));
+      return;
+    }
+    final nota = _buildNota(debt);
+    // Show bottom sheet: generic share OR WhatsApp deeplink
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 8),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          const Text('Bagikan Nota', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const Divider(),
+          ListTile(
+            leading: const CircleAvatar(backgroundColor: Color(0xFF25D366), child: Icon(Icons.message, color: Colors.white, size: 20)),
+            title: const Text('Kirim via WhatsApp'),
+            subtitle: const Text('Buka WhatsApp langsung'),
+            onTap: () async {
+              Navigator.pop(ctx);
+              // PRD §4.3.3: deeplink to WhatsApp with pre-filled message
+              final encoded = Uri.encodeComponent(nota);
+              final uri = Uri.parse('https://wa.me/?text=$encoded');
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } else {
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('WhatsApp tidak ditemukan.')));
+              }
+            },
+          ),
+          ListTile(
+            leading: const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.share, color: Colors.white, size: 20)),
+            title: const Text('Bagikan ke Aplikasi Lain'),
+            onTap: () {
+              Navigator.pop(ctx);
+              Share.share(nota);
+            },
+          ),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
   }
 
   @override

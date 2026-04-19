@@ -189,8 +189,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Rp ${p.sellingPrice.toStringAsFixed(0)} | Stok: ${p.stock}'),
-                            // [R-04 FIX] Show margin profit
+                            Text('Rp ${p.sellingPrice.toStringAsFixed(0)} | Stok: ${p.stock} ${p.unit}'),
                             if (widget.isAdmin && p.costPrice > 0)
                               Text(
                                 'Margin: ${((p.sellingPrice - p.costPrice) / p.costPrice * 100).toStringAsFixed(1)}%',

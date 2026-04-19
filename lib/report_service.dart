@@ -132,4 +132,71 @@ class ReportService {
 
     return XFile(path);
   }
+
+  /// Generates a CSV for active debt report.
+  Future<XFile> generateDebtCSV(List<Map<String, dynamic>> data) async {
+    List<List<dynamic>> rows = [
+      ['Nama Pelanggan', 'Total Kasbon (Rp)', 'Sudah Dibayar (Rp)', 'Sisa Hutang (Rp)', 'Status', 'Tanggal'],
+    ];
+    for (var item in data) {
+      final customer = item['customers'] as Map<String, dynamic>? ?? {};
+      rows.add([
+        customer['name'] ?? '-',
+        item['total_amount'],
+        item['paid_amount'],
+        item['remaining_amount'],
+        item['status'],
+        item['created_at'],
+      ]);
+    }
+    final csvData = const ListToCsvConverter().convert(rows);
+    final directory = await getTemporaryDirectory();
+    final path = "${directory.path}/debt_report_${DateTime.now().millisecondsSinceEpoch}.csv";
+    final file = File(path);
+    await file.writeAsString(csvData);
+    return XFile(path);
+  }
+
+  /// Generates a PDF for active debt report.
+  Future<XFile> generateDebtPDF(List<Map<String, dynamic>> data, String storeName) async {
+    final pdf = pw.Document();
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+    final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) => [
+          pw.Header(
+            level: 0,
+            child: pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
+              pw.Text("Laporan Kasbon - $storeName", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 18)),
+              pw.Text(dateFormat.format(DateTime.now())),
+            ]),
+          ),
+          pw.SizedBox(height: 20),
+          pw.TableHelper.fromTextArray(
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            headers: ['Pelanggan', 'Total', 'Dibayar', 'Sisa', 'Status'],
+            data: data.map((item) {
+              final customer = item['customers'] as Map<String, dynamic>? ?? {};
+              return [
+                customer['name'] ?? '-',
+                currencyFormat.format(item['total_amount'] ?? 0),
+                currencyFormat.format(item['paid_amount'] ?? 0),
+                currencyFormat.format(item['remaining_amount'] ?? 0),
+                item['status'] ?? '-',
+              ];
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+
+    final directory = await getTemporaryDirectory();
+    final path = "${directory.path}/debt_report_${DateTime.now().millisecondsSinceEpoch}.pdf";
+    final file = File(path);
+    await file.writeAsBytes(await pdf.save());
+    return XFile(path);
+  }
 }

@@ -24,6 +24,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   // [FIX] ImagePicker as a class field — not re-instantiated on every call
   final _picker = ImagePicker();
   String? _category;
+  String _unit = 'pcs';
   File? _imageFile;
   bool _loading = false;
 
@@ -36,6 +37,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _stock = TextEditingController(text: widget.product?.stock.toString() ?? '0');
     _minStock = TextEditingController(text: widget.product?.minStock.toString() ?? '5');
     _category = widget.product?.category;
+    _unit = widget.product?.unit ?? 'pcs';
   }
 
   @override
@@ -76,6 +78,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         stock: int.parse(_stock.text),
         minStock: int.parse(_minStock.text),
         imageUrl: imageUrl,
+        unit: _unit,
       );
 
       await service.saveProduct(p);
@@ -132,11 +135,20 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 const SizedBox(height: 12),
                 // Category
                 DropdownButtonFormField<String>(
-                  initialValue: _category, decoration: const InputDecoration(labelText: 'Kategori', border: OutlineInputBorder()),
+                  value: _category, decoration: const InputDecoration(labelText: 'Kategori', border: OutlineInputBorder()),
                   items: ['Makanan', 'Minuman', 'Harian'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                   onChanged: (v) => setState(() => _category = v),
                 ),
                 const SizedBox(height: 12),
+                // [R-02 FIX] Unit dropdown — per PRD §4.2.1
+                DropdownButtonFormField<String>(
+                  value: _unit,
+                  decoration: const InputDecoration(labelText: 'Satuan', border: OutlineInputBorder()),
+                  items: ['pcs', 'kg', 'liter', 'lusin', 'karton', 'dus']
+                      .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _unit = v ?? 'pcs'),
+                ),
                 // Prices
                 Row(children: [
                   Expanded(child: TextFormField(

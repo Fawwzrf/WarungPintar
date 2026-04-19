@@ -16,6 +16,7 @@ class Product {
   final int minStock;
   final String? imageUrl;
   final bool isActive;
+  final String unit; // pcs, kg, liter, lusin, karton
 
   double get costPrice => costPriceCents / 100;
   double get sellingPrice => sellingPriceCents / 100;
@@ -23,7 +24,7 @@ class Product {
   const Product({
     required this.id, required this.storeId, required this.name, this.category,
     required this.costPriceCents, required this.sellingPriceCents, required this.stock,
-    required this.minStock, this.imageUrl, this.isActive = true,
+    required this.minStock, this.imageUrl, this.isActive = true, this.unit = 'pcs',
   });
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -37,20 +38,21 @@ class Product {
     minStock: json['min_stock'] as int,
     imageUrl: json['image_url'] as String?,
     isActive: (json['is_active'] as bool?) ?? true,
+    unit: (json['unit'] as String?) ?? 'pcs',
   );
 
   Map<String, dynamic> toJson() => {
     'store_id': storeId, 'name': name, 'category': category,
     'cost_price': costPriceCents / 100, 'selling_price': sellingPriceCents / 100,
     'stock': stock, 'min_stock': minStock,
-    'image_url': imageUrl, 'is_active': isActive,
+    'image_url': imageUrl, 'is_active': isActive, 'unit': unit,
   };
 
   Product copyWith({int? stock, String? imageUrl, String? id}) => Product(
     id: id ?? this.id, storeId: storeId, name: name, category: category,
     costPriceCents: costPriceCents, sellingPriceCents: sellingPriceCents,
     stock: stock ?? this.stock, minStock: minStock,
-    imageUrl: imageUrl ?? this.imageUrl, isActive: isActive,
+    imageUrl: imageUrl ?? this.imageUrl, isActive: isActive, unit: unit,
   );
 }
 
