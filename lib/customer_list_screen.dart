@@ -103,7 +103,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                       if (widget.selectMode) {
                         Navigator.pop(context, c);
                       } else {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => CreateDebtScreen(storeId: widget.storeId, customer: c)));
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => CustomerDetailScreen(storeId: widget.storeId, customer: c)));
                       }
                     },
                   );
