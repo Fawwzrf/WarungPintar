@@ -13,9 +13,13 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Policies for Profiles
+DROP POLICY IF EXISTS "profiles_select_all" ON public.profiles;
 CREATE POLICY "profiles_select_all" ON public.profiles FOR SELECT TO authenticated USING (true);
 
 -- 1.5 Fix: Add Foreign Key to store_members to enable relationship joining
+ALTER TABLE public.store_members
+DROP CONSTRAINT IF EXISTS store_members_user_id_fkey;
+
 ALTER TABLE public.store_members
 ADD CONSTRAINT store_members_user_id_fkey
 FOREIGN KEY (user_id) REFERENCES public.profiles(id);
