@@ -118,6 +118,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
       // [UI FIX] FAB for quick add (Admin only) — per PRD §8.2
       floatingActionButton: widget.isAdmin
           ? FloatingActionButton(
+              heroTag: 'product_fab',
               onPressed: () async {
                 await Navigator.push(context, MaterialPageRoute(builder: (_) => ProductFormScreen(storeId: widget.storeId)));
                 _refresh();

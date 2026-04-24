@@ -11,34 +11,45 @@ import 'product_list_screen.dart';
 import 'dashboard_screen.dart';
 import 'report_screen.dart';
 import 'settings_screen.dart';
+import 'onboarding_screen.dart';
 
 // [CRIT-01 FIX] Credentials injected via --dart-define at build time.
 const _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 // ──────────────────────────────────────────────
-// [K-01 FIX] RBAC: Fetch user's store membership (storeId + role)
+// RBAC: Store membership model
 // ──────────────────────────────────────────────
 class StoreMembership {
   final String storeId;
-  final String role; // 'Admin' or 'Cashier'
+  final String role; // 'admin' or 'cashier' (always lowercase — matches DB CHECK constraint)
   const StoreMembership({required this.storeId, required this.role});
   bool get isAdmin => role == 'admin';
   bool get isCashier => role == 'cashier';
 }
 
+// ──────────────────────────────────────────────
+// storeMembershipProvider
+// Key design decisions:
+// 1. Cache is keyed by user.id so multiple users on same device don't bleed into each other.
+// 2. On success, always write fresh data to cache.
+// 3. On error (offline), fall back to cache for same user only.
+// 4. Returns null only if user has NO membership at all → triggers Onboarding.
+// ──────────────────────────────────────────────
 final storeMembershipProvider = FutureProvider<StoreMembership?>((ref) async {
   final user = Supabase.instance.client.auth.currentUser;
   if (user == null) return null;
 
+  // [RBAC-FIX] Key cache by user.id — prevents role bleeding between accounts
+  final cacheKey = 'membership_${user.id}';
   final box = Hive.box('cache');
-  
+
   try {
     final res = await Supabase.instance.client
         .from('store_members')
-        .select('store_id, role, created_at')
+        .select('role, store_id')
         .eq('user_id', user.id)
-        .order('created_at', ascending: false)
+        .order('role', ascending: true) // 'admin' < 'cashier' alphabetically → always prefer admin
         .limit(1)
         .maybeSingle();
 
@@ -47,21 +58,24 @@ final storeMembershipProvider = FutureProvider<StoreMembership?>((ref) async {
         storeId: res['store_id'] as String,
         role: res['role'] as String,
       );
-      // Cache the result
-      await box.put('last_membership', {'store_id': membership.storeId, 'role': membership.role});
+      // Write fresh data to user-specific cache key
+      await box.put(cacheKey, {'store_id': membership.storeId, 'role': membership.role});
       return membership;
     }
+    // User is authenticated but has no store membership → show Onboarding
+    return null;
   } catch (e) {
-    // If offline or error, try to get from cache
-    final cached = box.get('last_membership');
+    debugPrint('[RBAC] Membership fetch error: $e — falling back to cache');
+    // [RBAC-FIX] Only use cache for THIS user
+    final cached = box.get(cacheKey);
     if (cached != null) {
       return StoreMembership(
         storeId: cached['store_id'] as String,
         role: cached['role'] as String,
       );
     }
+    return null;
   }
-  return null;
 });
 
 // Legacy provider for backward compatibility
@@ -71,14 +85,13 @@ final storeIdProvider = FutureProvider<String?>((ref) async {
 });
 
 // ──────────────────────────────────────────────
-// [S-03 FIX] Connectivity status provider
+// Connectivity status provider
 // ──────────────────────────────────────────────
 final connectivityProvider = StateProvider<bool>((ref) => true);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hive for offline caching
   await Hive.initFlutter();
   await Hive.openBox('cache');
   await Hive.openBox('productsBox');
@@ -104,10 +117,20 @@ class WarungPintarApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authServiceProvider);
 
+    // [RBAC-FIX] Invalidate membership data each time the user logs in/out
+    // so stale data never persists from a previous session
+    ref.listen(authServiceProvider, (prev, next) {
+      final prevUser = prev?.valueOrNull;
+      final nextUser = next.valueOrNull;
+      // User just logged in (was null, now has value)
+      if (prevUser == null && nextUser != null) {
+        ref.invalidate(storeMembershipProvider);
+      }
+    });
+
     return MaterialApp(
       title: 'WarungPintar Lite',
       debugShowCheckedModeBanner: false,
-      // [S-01 FIX] Light theme
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.light),
         useMaterial3: true,
@@ -118,7 +141,6 @@ class WarungPintarApp extends ConsumerWidget {
           ),
         ),
       ),
-      // [S-01 FIX] Dark Mode support
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
         useMaterial3: true,
@@ -129,7 +151,7 @@ class WarungPintarApp extends ConsumerWidget {
           ),
         ),
       ),
-      themeMode: ThemeMode.system, // Follow Android system setting
+      themeMode: ThemeMode.system,
       home: authState.when(
         data: (user) => user == null ? const LoginScreen() : const MainNavigationHub(),
         loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -140,7 +162,7 @@ class WarungPintarApp extends ConsumerWidget {
 }
 
 // ──────────────────────────────────────────────
-// [K-01 FIX] MainNavigationHub with RBAC enforcement
+// MainNavigationHub with full RBAC enforcement
 // ──────────────────────────────────────────────
 class MainNavigationHub extends ConsumerStatefulWidget {
   const MainNavigationHub({super.key});
@@ -156,7 +178,6 @@ class _MainNavigationHubState extends ConsumerState<MainNavigationHub> {
   @override
   void initState() {
     super.initState();
-    // [S-03 FIX] Periodic connectivity check
     _connectivityTimer = Timer.periodic(const Duration(seconds: 10), (_) => _checkConnectivity());
     _checkConnectivity();
   }
@@ -170,9 +191,17 @@ class _MainNavigationHubState extends ConsumerState<MainNavigationHub> {
   Future<void> _checkConnectivity() async {
     try {
       final result = await InternetAddress.lookup('google.com').timeout(const Duration(seconds: 3));
-      if (mounted) ref.read(connectivityProvider.notifier).state = result.isNotEmpty;
+      if (mounted) {
+        Future.microtask(() {
+          if (mounted) ref.read(connectivityProvider.notifier).state = result.isNotEmpty;
+        });
+      }
     } catch (_) {
-      if (mounted) ref.read(connectivityProvider.notifier).state = false;
+      if (mounted) {
+        Future.microtask(() {
+          if (mounted) ref.read(connectivityProvider.notifier).state = false;
+        });
+      }
     }
   }
 
@@ -181,39 +210,26 @@ class _MainNavigationHubState extends ConsumerState<MainNavigationHub> {
     final membershipAsync = ref.watch(storeMembershipProvider);
     final isOnline = ref.watch(connectivityProvider);
 
+    // [RBAC-FIX] If this is a brand-new signup, always show Onboarding
+    // regardless of whether the SQL trigger created a membership already
+    final authNotifier = ref.read(authServiceProvider.notifier);
+    if (authNotifier.isNewUser) {
+      authNotifier.clearNewUserFlag();
+      return const OnboardingScreen();
+    }
+
     return membershipAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('Gagal memuat data toko: $e'))),
       data: (membership) {
+        // No membership → show Onboarding to let user choose their role
         if (membership == null) {
-          return Scaffold(
-            body: Center(
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.store_outlined, size: 64, color: Colors.grey),
-                const SizedBox(height: 16),
-                const Text('Anda belum terdaftar di toko manapun.\nHubungi pemilik toko.', textAlign: TextAlign.center),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Keluar'),
-                  onPressed: () => ref.read(authServiceProvider.notifier).signOut(),
-                ),
-              ]),
-            ),
-          );
+          return const OnboardingScreen();
         }
 
         final isAdmin = membership.isAdmin;
         final storeId = membership.storeId;
 
-        // [K-01 FIX] Build screens based on role
-        // Admin: Dashboard, Stok, Kasbon, Laporan (4 tabs)
-        // Cashier: Dashboard, Stok (read-only), Kasbon (3 tabs)
-        // [Settings] Always available for all roles — has logout
-        // [K-01 FIX] Build screens based on role
-        // Admin: Dashboard, Stok, Kasbon, Laporan (4 tabs)
-        // Cashier: Dashboard, Stok (read-only), Kasbon (3 tabs)
-        // [Settings] Always available for all roles — has logout
         final List<Widget> screens = [
           DashboardScreen(storeId: storeId, isAdmin: isAdmin),
           ProductListScreen(storeId: storeId, isAdmin: isAdmin),
@@ -230,14 +246,13 @@ class _MainNavigationHubState extends ConsumerState<MainNavigationHub> {
           const NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Pengaturan'),
         ];
 
-        // Guard: if index is out of bounds after role change
+        // Guard: prevent index out-of-bounds if role changes mid-session
         if (_currentIndex >= screens.length) {
           _currentIndex = 0;
         }
 
         return Scaffold(
           body: Column(children: [
-            // [S-03 FIX] Offline banner
             if (!isOnline)
               Container(
                 width: double.infinity,

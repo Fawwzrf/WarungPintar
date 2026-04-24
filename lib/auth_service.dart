@@ -9,10 +9,12 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
   final SupabaseClient _client;
   final FlutterSecureStorage _storage;
   Timer? _timeoutTimer;
-  // [MED-06 FIX] Store subscription to cancel on dispose
   StreamSubscription<AuthState>? _authSub;
 
-  AuthStateNotifier({SupabaseClient? client, FlutterSecureStorage? storage}) 
+  // [RBAC-FIX] Flag to detect brand-new sign-ups vs existing logins
+  bool isNewUser = false;
+
+  AuthStateNotifier({SupabaseClient? client, FlutterSecureStorage? storage})
     : _client = client ?? Supabase.instance.client,
       _storage = storage ?? const FlutterSecureStorage(),
       super(const AsyncLoading()) {
@@ -20,8 +22,6 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
   }
 
   Future<void> _init() async {
-    // [FIX] Subscribe to auth state FIRST so it emits immediately and clears the loading screen.
-    // If placed after await _storage.read(), any hang in SecureStorage will cause an infinite loading screen.
     _authSub = _client.auth.onAuthStateChange.listen((data) {
       if (data.session != null) {
         _storage.write(key: 'session', value: data.session!.accessToken).catchError((_) {});
@@ -29,6 +29,8 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
       } else {
         _storage.delete(key: 'session').catchError((_) {});
         _timeoutTimer?.cancel();
+        // Clear new-user flag on logout so it doesn't persist to next session
+        isNewUser = false;
       }
       state = AsyncData(data.session?.user);
     });
@@ -39,7 +41,7 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
         _resetInactivityTimer();
       }
     } catch (e) {
-      // Ignore secure storage hang/timeout errors, Supabase internal auth state is the source of truth
+      // Ignore secure storage hang/timeout errors — Supabase internal state is source of truth
     }
   }
 
@@ -48,23 +50,33 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
     _timeoutTimer = Timer(const Duration(hours: 1), signOut);
   }
 
-  Future<void> _handleAuth(Future<AuthResponse> Function() action) async {
+  Future<void> _handleAuth(Future<AuthResponse> Function() action, {bool markAsNew = false}) async {
     state = const AsyncLoading();
     try {
+      // [RBAC-FIX] Set flag BEFORE await so it's ready when the auth state listener fires
+      if (markAsNew) isNewUser = true;
       await action();
       _resetInactivityTimer();
     } on AuthException catch (e) {
+      isNewUser = false;
       state = AsyncError(e.message, StackTrace.current);
     } catch (e) {
+      isNewUser = false;
       state = AsyncError('Unexpected error occurred', StackTrace.current);
     }
   }
 
-  Future<void> signIn(String email, String password) => 
-    _handleAuth(() => _client.auth.signInWithPassword(email: email, password: password));
+  Future<void> signIn(String email, String password) =>
+    _handleAuth(
+      () => _client.auth.signInWithPassword(email: email, password: password),
+      markAsNew: false,
+    );
 
-  Future<void> signUp(String email, String password) => 
-    _handleAuth(() => _client.auth.signUp(email: email, password: password));
+  Future<void> signUp(String email, String password) =>
+    _handleAuth(
+      () => _client.auth.signUp(email: email, password: password),
+      markAsNew: true,
+    );
 
   Future<void> resetPassword(String email) async {
     try {
@@ -81,9 +93,11 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
     state = const AsyncData(null);
   }
 
+  // [RBAC-FIX] Called by MainNavigationHub after onboarding has been shown once
+  void clearNewUserFlag() => isNewUser = false;
+
   void userActivity() => _resetInactivityTimer();
 
-  // [MED-06 FIX] Cancel stream subscription and timer on dispose
   @override
   void dispose() {
     _authSub?.cancel();
