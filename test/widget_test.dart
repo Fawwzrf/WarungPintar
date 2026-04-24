@@ -8,35 +8,39 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:mockito/mockito.dart';
 import 'package:warung_pintar/auth_service.dart';
 import 'package:warung_pintar/main.dart';
 
-class MockSupabaseClient extends Mock implements SupabaseClient {}
-class MockGoTrueClient extends Mock implements GoTrueClient {
+// Use Fake instead of Mock to avoid Mockito complexity in simple widget tests
+class FakeSupabaseClient extends Fake implements SupabaseClient {
+  @override
+  GoTrueClient get auth => FakeGoTrueClient();
+}
+
+class FakeGoTrueClient extends Fake implements GoTrueClient {
   @override
   Stream<AuthState> get onAuthStateChange => const Stream.empty();
+  
+  @override
+  User? get currentUser => null;
 }
 
 void main() {
   testWidgets('App starts and shows login screen', (WidgetTester tester) async {
-    // Build our app and trigger a frame with a mocked auth state to avoid Supabase initialization errors
-    final mockAuth = MockGoTrueClient();
-    final mockClient = MockSupabaseClient();
-    when(mockClient.auth).thenReturn(mockAuth);
+    final fakeClient = FakeSupabaseClient();
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           authServiceProvider.overrideWith((ref) => AuthStateNotifier(
-            client: mockClient,
+            client: fakeClient,
           )),
         ],
         child: const WarungPintarApp(),
       ),
     );
 
-    // Verify that login screen or at least the app title is present
+    // Verify that the app title is present
     expect(find.text('WarungPintar Lite'), findsOneWidget);
   });
 }
