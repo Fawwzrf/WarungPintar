@@ -15,6 +15,11 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 -- Policies for Profiles
 CREATE POLICY "profiles_select_all" ON public.profiles FOR SELECT TO authenticated USING (true);
 
+-- 1.5 Fix: Add Foreign Key to store_members to enable relationship joining
+ALTER TABLE public.store_members
+ADD CONSTRAINT store_members_user_id_fkey
+FOREIGN KEY (user_id) REFERENCES public.profiles(id);
+
 -- 2. Trigger to Sync Auth Users to Profiles
 CREATE OR REPLACE FUNCTION public.handle_new_profile()
 RETURNS TRIGGER AS $$
