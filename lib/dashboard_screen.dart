@@ -28,7 +28,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final state = ref.watch(dashboardSummaryProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).brightness == Brightness.dark ? null : Colors.grey[50],
       appBar: AppBar(
         title: const Text('Dashboard Toko'),
         actions: [
@@ -72,7 +72,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Center(
             child: Text(
               'Terakhir diperbarui: ${DateFormat('HH:mm:ss').format(summary.updatedAt)}',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
             ),
           ),
         ],
@@ -140,24 +140,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
         ),
-        if (widget.isAdmin) ...[
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.account_balance_wallet_outlined, size: 24),
-              label: const Text('Pengeluaran', style: TextStyle(fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange[700],
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 20),
-              ),
-              onPressed: () => Navigator.push(
-                context, 
-                MaterialPageRoute(builder: (_) => ExpenseScreen(storeId: widget.storeId))
-              ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.account_balance_wallet_outlined, size: 24),
+            label: const Text('Pengeluaran', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange[700],
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+            ),
+            onPressed: () => Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (_) => ExpenseScreen(storeId: widget.storeId))
             ),
           ),
-        ],
+        ),
       ],
     );
   }
@@ -166,7 +164,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Container(
       height: 280,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor, 
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -224,7 +226,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildTopProducts(DashboardSummary summary) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor, 
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -239,7 +245,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               final p = summary.topProducts[index];
               return ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(backgroundColor: Colors.blue[50], child: Text('${index + 1}')),
+                leading: CircleAvatar(
+                  backgroundColor: Colors.blue.withOpacity(0.1), 
+                  child: Text('${index + 1}', style: const TextStyle(color: Colors.blue)),
+                ),
                 title: Text(p.productName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                 subtitle: Text('${p.totalQtySold} Terjual'),
                 trailing: Text(
@@ -266,9 +275,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [Colors.purple[50]!, Colors.blue[50]!]),
+            gradient: LinearGradient(
+              colors: Theme.of(context).brightness == Brightness.dark 
+                  ? [Colors.purple.withOpacity(0.2), Colors.blue.withOpacity(0.2)]
+                  : [Colors.purple[50]!, Colors.blue[50]!]
+            ),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.purple[100]!),
+            border: Border.all(color: Colors.purple.withOpacity(0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,7 +293,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   Expanded(
                     child: Text(
                       'Rekomendasi Restock AI',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.purple[900]),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        fontSize: 16, 
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.purple[200] : Colors.purple[900],
+                      ),
                     ),
                   ),
                 ],
@@ -292,7 +309,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor, 
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                  ),
                   child: Row(
                     children: [
                       Icon(
@@ -351,7 +372,11 @@ class _SummaryCard extends StatelessWidget {
     return Container(
       width: width,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey[200]!)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor, 
+        borderRadius: BorderRadius.circular(12), 
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
