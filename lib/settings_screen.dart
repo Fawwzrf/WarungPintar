@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'auth_service.dart';
 import 'main.dart';
+import 'member_management_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -28,10 +29,26 @@ class SettingsScreen extends ConsumerWidget {
           ),
           title: Text(user?.email ?? '-', style: const TextStyle(fontWeight: FontWeight.w600)),
           subtitle: membershipAsync.whenOrNull(
-            data: (m) => Text('Peran: ${m?.role ?? '-'} • Toko: ${m?.storeId.substring(0, 8) ?? '-'}...'),
-          ) != null ? membershipAsync.whenOrNull(data: (m) => Text('Peran: ${m?.role ?? '-'}')) : null,
+            data: (m) => Text('Peran: ${m?.role.toUpperCase() ?? '-'} • Toko: ${m?.storeId.substring(0, 8) ?? '-'}...'),
+          ),
         ),
         const Divider(),
+
+        // ── Bisnis ──────────────────────────────────────
+        if (membershipAsync.value?.isAdmin == true) ...[
+          const _SectionHeader('Manajemen Bisnis'),
+          ListTile(
+            leading: const Icon(Icons.people_outline),
+            title: const Text('Manajemen Karyawan'),
+            subtitle: const Text('Tambah kasir atau admin baru'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              final storeId = membershipAsync.value!.storeId;
+              Navigator.push(context, MaterialPageRoute(builder: (_) => MemberManagementScreen(storeId: storeId)));
+            },
+          ),
+          const Divider(),
+        ],
 
         // ── Tampilan ────────────────────────────────────
         const _SectionHeader('Tampilan'),

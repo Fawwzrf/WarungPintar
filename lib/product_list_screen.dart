@@ -199,8 +199,8 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                         ),
                         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                           if (isLow) const Tooltip(message: 'Stok Menipis', child: Icon(Icons.warning_amber_rounded, color: Colors.orange)),
-                          // [K-01 FIX] Only Admin can edit products
-                          if (widget.isAdmin)
+                          // [K-01 FIX] Only Admin can edit products or adjust stock
+                          if (widget.isAdmin) ...[
                             IconButton(
                               icon: const Icon(Icons.edit_outlined),
                               tooltip: 'Edit Produk',
@@ -209,15 +209,15 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                                 _refresh();
                               },
                             ),
-                          // Both Admin and Cashier can adjust stock
-                          IconButton(
-                            icon: const Icon(Icons.inventory_2_outlined),
-                            tooltip: 'Sesuaikan Stok',
-                            onPressed: () async {
-                              await Navigator.push(context, MaterialPageRoute(builder: (_) => StockFormScreen(product: p)));
-                              _refresh();
-                            },
-                          ),
+                            IconButton(
+                              icon: const Icon(Icons.inventory_2_outlined),
+                              tooltip: 'Sesuaikan Stok',
+                              onPressed: () async {
+                                await Navigator.push(context, MaterialPageRoute(builder: (_) => StockFormScreen(product: p)));
+                                _refresh();
+                              },
+                            ),
+                          ],
                         ]),
                       );
 

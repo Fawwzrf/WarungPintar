@@ -189,8 +189,12 @@ class _MainNavigationHubState extends ConsumerState<MainNavigationHub> {
         // Admin: Dashboard, Stok, Kasbon, Laporan (4 tabs)
         // Cashier: Dashboard, Stok (read-only), Kasbon (3 tabs)
         // [Settings] Always available for all roles — has logout
+        // [K-01 FIX] Build screens based on role
+        // Admin: Dashboard, Stok, Kasbon, Laporan (4 tabs)
+        // Cashier: Dashboard, Stok (read-only), Kasbon (3 tabs)
+        // [Settings] Always available for all roles — has logout
         final List<Widget> screens = [
-          DashboardScreen(storeId: storeId),
+          DashboardScreen(storeId: storeId, isAdmin: isAdmin),
           ProductListScreen(storeId: storeId, isAdmin: isAdmin),
           CustomerListScreen(storeId: storeId),
           if (isAdmin) ReportScreen(storeId: storeId, isAdmin: isAdmin),

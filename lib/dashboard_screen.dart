@@ -9,7 +9,8 @@ import 'expense_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   final String storeId;
-  const DashboardScreen({super.key, required this.storeId});
+  final bool isAdmin;
+  const DashboardScreen({super.key, required this.storeId, required this.isAdmin});
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
@@ -60,8 +61,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 24),
           _buildFastActionButtons(context),
           const SizedBox(height: 24),
-          _buildAiPredictionList(),
-          const SizedBox(height: 24),
+          if (widget.isAdmin) ...[
+            _buildAiPredictionList(),
+            const SizedBox(height: 24),
+          ],
           _buildSalesChart(summary),
           const SizedBox(height: 24),
           _buildTopProducts(summary),
@@ -84,13 +87,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         spacing: 12,
         runSpacing: 12,
         children: [
-          _SummaryCard(
-            title: 'Laba Bersih Hari Ini',
-            value: 'Rp ${NumberFormat('#,###').format(summary.todayProfit)}',
-            color: summary.todayProfit >= 0 ? Colors.green : Colors.red,
-            icon: Icons.monetization_on,
-            width: cardWidth,
-          ),
+          if (widget.isAdmin)
+            _SummaryCard(
+              title: 'Laba Bersih Hari Ini',
+              value: 'Rp ${NumberFormat('#,###').format(summary.todayProfit)}',
+              color: summary.todayProfit >= 0 ? Colors.green : Colors.red,
+              icon: Icons.monetization_on,
+              width: cardWidth,
+            ),
           _SummaryCard(
             title: 'Omzet Penjualan',
             value: 'Rp ${NumberFormat('#,###').format(summary.todaySales)}',
@@ -98,13 +102,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             icon: Icons.storefront,
             width: cardWidth,
           ),
-          _SummaryCard(
-            title: 'Pengeluaran Laci',
-            value: 'Rp ${NumberFormat('#,###').format(summary.todayExpenses)}',
-            color: Colors.orange,
-            icon: Icons.outbound,
-            width: cardWidth,
-          ),
+          if (widget.isAdmin)
+            _SummaryCard(
+              title: 'Pengeluaran Laci',
+              value: 'Rp ${NumberFormat('#,###').format(summary.todayExpenses)}',
+              color: Colors.orange,
+              icon: Icons.outbound,
+              width: cardWidth,
+            ),
           _SummaryCard(
             title: 'Total Piutang Aktif',
             value: 'Rp ${NumberFormat('#,###').format(summary.activeDebtsTotal)}',
@@ -135,22 +140,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.account_balance_wallet_outlined, size: 24),
-            label: const Text('Pengeluaran', style: TextStyle(fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange[700],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-            ),
-            onPressed: () => Navigator.push(
-              context, 
-              MaterialPageRoute(builder: (_) => ExpenseScreen(storeId: widget.storeId))
+        if (widget.isAdmin) ...[
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.account_balance_wallet_outlined, size: 24),
+              label: const Text('Pengeluaran', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange[700],
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+              ),
+              onPressed: () => Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (_) => ExpenseScreen(storeId: widget.storeId))
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }
