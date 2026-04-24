@@ -7,25 +7,37 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mockito/mockito.dart';
+import 'package:warung_pintar/auth_service.dart';
 import 'package:warung_pintar/main.dart';
 
+class MockSupabaseClient extends Mock implements SupabaseClient {}
+class MockGoTrueClient extends Mock implements GoTrueClient {
+  @override
+  Stream<AuthState> get onAuthStateChange => const Stream.empty();
+}
+
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const ProviderScope(child: WarungPintarApp()));
+  testWidgets('App starts and shows login screen', (WidgetTester tester) async {
+    // Build our app and trigger a frame with a mocked auth state to avoid Supabase initialization errors
+    final mockAuth = MockGoTrueClient();
+    final mockClient = MockSupabaseClient();
+    when(mockClient.auth).thenReturn(mockAuth);
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authServiceProvider.overrideWith((ref) => AuthStateNotifier(
+            client: mockClient,
+          )),
+        ],
+        child: const WarungPintarApp(),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that login screen or at least the app title is present
+    expect(find.text('WarungPintar Lite'), findsOneWidget);
   });
 }
