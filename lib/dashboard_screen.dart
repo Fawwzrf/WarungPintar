@@ -167,7 +167,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor, 
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,7 +229,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor, 
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,7 +246,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               return ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: CircleAvatar(
-                  backgroundColor: Colors.blue.withOpacity(0.1), 
+                  backgroundColor: Colors.blue.withValues(alpha: 0.1), 
                   child: Text('${index + 1}', style: const TextStyle(color: Colors.blue)),
                 ),
                 title: Text(p.productName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
@@ -277,11 +277,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: Theme.of(context).brightness == Brightness.dark 
-                  ? [Colors.purple.withOpacity(0.2), Colors.blue.withOpacity(0.2)]
+                  ? [Colors.purple.withValues(alpha: 0.2), Colors.blue.withValues(alpha: 0.2)]
                   : [Colors.purple[50]!, Colors.blue[50]!]
             ),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.purple.withOpacity(0.3)),
+            border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,7 +312,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor, 
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+                    border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
                   ),
                   child: Row(
                     children: [
@@ -375,7 +375,7 @@ class _SummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor, 
         borderRadius: BorderRadius.circular(12), 
-        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
