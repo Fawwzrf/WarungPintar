@@ -98,7 +98,12 @@ class _CreateSaleScreenState extends ConsumerState<CreateSaleScreen> {
                   if (cashAmount > 0)
                     Container(
                       padding: const EdgeInsets.all(12),
-                      color: change >= 0 ? Colors.green[50] : Colors.red[50],
+                      decoration: BoxDecoration(
+                        color: change >= 0 
+                            ? (Theme.of(context).brightness == Brightness.dark ? Colors.green.withValues(alpha: 0.2) : Colors.green[50])
+                            : (Theme.of(context).brightness == Brightness.dark ? Colors.red.withValues(alpha: 0.2) : Colors.red[50]),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -108,7 +113,9 @@ class _CreateSaleScreenState extends ConsumerState<CreateSaleScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold, 
                               fontSize: 18, 
-                              color: change >= 0 ? Colors.green[800] : Colors.red
+                              color: change >= 0 
+                                  ? (Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.green[800])
+                                  : (Theme.of(context).brightness == Brightness.dark ? Colors.red[300] : Colors.red)
                             ),
                           )
                         ],
@@ -196,11 +203,15 @@ class _CreateSaleScreenState extends ConsumerState<CreateSaleScreen> {
               ),
         ),
         Container(
-          padding: const EdgeInsets.all(16), color: Colors.grey[100],
+          padding: const EdgeInsets.all(16), 
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            border: Border(top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1))),
+          ),
           child: Column(children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               const Text('TOTAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text(totalStr, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
+              Text(totalStr, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
             ]),
             const SizedBox(height: 16),
             Row(children: [

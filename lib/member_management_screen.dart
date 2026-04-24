@@ -36,7 +36,10 @@ class _MemberManagementScreenState extends ConsumerState<MemberManagementScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Masukkan email kasir yang sudah mendaftar di aplikasi.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(
+              'Masukkan email kasir yang sudah mendaftar di aplikasi.', 
+              style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: emailController,

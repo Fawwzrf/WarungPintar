@@ -71,7 +71,10 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Gunakan fitur ini untuk mencatat uang yang diambil dari laci kasir (misal: bayar listrik, beli plastik kantong, uang makan, dsb.)', style: TextStyle(color: Colors.grey)),
+                Text(
+                  'Gunakan fitur ini untuk mencatat uang yang diambil dari laci kasir (misal: bayar listrik, beli plastik kantong, uang makan, dsb.)', 
+                  style: TextStyle(color: Theme.of(context).hintColor),
+                ),
                 const SizedBox(height: 24),
                 TextField(
                   controller: _amount,

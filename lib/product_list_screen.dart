@@ -182,8 +182,11 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                             )
                           : Container(
                               width: 48, height: 48,
-                              decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(6)),
-                              child: const Icon(Icons.image, color: Colors.grey),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[200], 
+                                borderRadius: BorderRadius.circular(6)
+                              ),
+                              child: Icon(Icons.image, color: Theme.of(context).hintColor),
                             ),
                         title: Text(p.name),
                         subtitle: Column(
@@ -191,10 +194,13 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                           children: [
                             Text('Rp ${p.sellingPrice.toStringAsFixed(0)} | Stok: ${p.stock} ${p.unit}'),
                             if (widget.isAdmin && p.costPrice > 0)
-                              Text(
-                                'Margin: ${((p.sellingPrice - p.costPrice) / p.costPrice * 100).toStringAsFixed(1)}%',
-                                style: TextStyle(fontSize: 11, color: Colors.green[700]),
-                              ),
+                                Text(
+                                  'Margin: ${((p.sellingPrice - p.costPrice) / p.costPrice * 100).toStringAsFixed(1)}%',
+                                  style: TextStyle(
+                                    fontSize: 11, 
+                                    color: Theme.of(context).brightness == Brightness.dark ? Colors.green[300] : Colors.green[700]
+                                  ),
+                                ),
                           ],
                         ),
                         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
