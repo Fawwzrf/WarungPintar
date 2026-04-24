@@ -30,18 +30,38 @@ class StoreMembership {
 final storeMembershipProvider = FutureProvider<StoreMembership?>((ref) async {
   final user = Supabase.instance.client.auth.currentUser;
   if (user == null) return null;
-  final res = await Supabase.instance.client
-      .from('store_members')
-      .select('store_id, role, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', ascending: false)
-      .limit(1)
-      .maybeSingle();
-  if (res == null) return null;
-  return StoreMembership(
-    storeId: res['store_id'] as String,
-    role: res['role'] as String,
-  );
+
+  final box = Hive.box('cache');
+  
+  try {
+    final res = await Supabase.instance.client
+        .from('store_members')
+        .select('store_id, role, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (res != null) {
+      final membership = StoreMembership(
+        storeId: res['store_id'] as String,
+        role: res['role'] as String,
+      );
+      // Cache the result
+      await box.put('last_membership', {'store_id': membership.storeId, 'role': membership.role});
+      return membership;
+    }
+  } catch (e) {
+    // If offline or error, try to get from cache
+    final cached = box.get('last_membership');
+    if (cached != null) {
+      return StoreMembership(
+        storeId: cached['store_id'] as String,
+        role: cached['role'] as String,
+      );
+    }
+  }
+  return null;
 });
 
 // Legacy provider for backward compatibility

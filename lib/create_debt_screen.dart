@@ -154,11 +154,15 @@ class _CreateDebtScreenState extends ConsumerState<CreateDebtScreen> {
               ),
         ),
         Container(
-          padding: const EdgeInsets.all(16), color: Colors.grey[100],
+          padding: const EdgeInsets.all(16), 
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            border: Border(top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1))),
+          ),
           child: Column(children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               const Text('TOTAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text(totalStr, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isOverLimit ? Colors.red : Colors.blue)),
+              Text(totalStr, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isOverLimit ? Colors.red : Theme.of(context).colorScheme.primary)),
             ]),
             if (isOverLimit) const Text('Melebihi limit kredit!', style: TextStyle(color: Colors.red)),
             const SizedBox(height: 16),

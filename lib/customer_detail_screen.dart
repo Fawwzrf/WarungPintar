@@ -45,11 +45,15 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
         // Summary Header
         Container(
           padding: const EdgeInsets.all(20),
-          color: Colors.blue[50],
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark 
+                ? Colors.blue.withValues(alpha: 0.1) 
+                : Colors.blue[50],
+          ),
           child: Row(children: [
-            Expanded(child: _infoTile('Total Hutang', 'Rp ${currentCustomer.totalDebt.toStringAsFixed(0)}', Colors.red)),
+            Expanded(child: _infoTile(context, 'Total Hutang', 'Rp ${currentCustomer.totalDebt.toStringAsFixed(0)}', Colors.red)),
             const VerticalDivider(),
-            Expanded(child: _infoTile('Sisa Limit', 'Rp ${(currentCustomer.maxCredit - currentCustomer.totalDebt).toStringAsFixed(0)}', Colors.green)),
+            Expanded(child: _infoTile(context, 'Sisa Limit', 'Rp ${(currentCustomer.maxCredit - currentCustomer.totalDebt).toStringAsFixed(0)}', Colors.green)),
           ]),
         ),
         
@@ -68,9 +72,15 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
         ),
 
         const Divider(),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Align(alignment: Alignment.centerLeft, child: Text('RIWAYAT KASBON', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey))),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Align(
+            alignment: Alignment.centerLeft, 
+            child: Text(
+              'RIWAYAT KASBON', 
+              style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).hintColor),
+            ),
+          ),
         ),
 
         // Debt List
@@ -114,9 +124,9 @@ class _CustomerDetailScreenState extends ConsumerState<CustomerDetailScreen> {
     );
   }
 
-  Widget _infoTile(String label, String value, Color color) {
+  Widget _infoTile(BuildContext context, String label, String value, Color color) {
     return Column(children: [
-      Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor)),
       Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
     ]);
   }
