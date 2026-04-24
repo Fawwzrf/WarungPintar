@@ -32,8 +32,9 @@ final storeMembershipProvider = FutureProvider<StoreMembership?>((ref) async {
   if (user == null) return null;
   final res = await Supabase.instance.client
       .from('store_members')
-      .select('store_id, role')
+      .select('store_id, role, created_at')
       .eq('user_id', user.id)
+      .order('created_at', ascending: false)
       .limit(1)
       .maybeSingle();
   if (res == null) return null;
