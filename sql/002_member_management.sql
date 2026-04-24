@@ -9,7 +9,13 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Enable RLS
+-- 1.2 Fix: Allow Admins to see all members in their store
+DROP POLICY IF EXISTS "sm_select" ON public.store_members;
+CREATE POLICY "sm_select" ON public.store_members 
+FOR SELECT TO authenticated 
+USING (user_id = auth.uid() OR public.is_admin_of(store_id));
+
+-- Enable RLS on Profiles (already done, but keeping for sequence)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Policies for Profiles
