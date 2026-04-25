@@ -52,29 +52,4 @@ jobs:
           name: warungpintar-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Deploy to Supabase Storage (App Distribution)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} 
-          BUCKET_NAME: 'app-releases'
-        run: |
-          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
-          FILE_NAME="WarungPintar-v2.0-${GITHUB_SHA::7}.apk"
-          
-          # Upload via Supabase Storage REST API
-          # Uses service role key to bypass RLS for administrative uploads
-          echo "Uploading $FILE_NAME to Supabase Storage bucket: $BUCKET_NAME..."
-          
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-            "${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${FILE_NAME}" \
-            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-            -H "Content-Type: application/vnd.android.package-archive" \
-            --data-binary "@${APK_PATH}")
-            
-          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 201 ]; then
-            echo "✅ Successfully deployed to Supabase: ${FILE_NAME}"
-          else
-            echo "❌ Failed to deploy to Supabase. HTTP Status: $HTTP_STATUS"
-            exit 1
-          fi
+

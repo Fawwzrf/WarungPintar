@@ -33,6 +33,7 @@ Mayoritas pemilik warung di Indonesia (64 juta UMKM) masih mencatat stok dan piu
 |-------|-----------|
 | **Prediksi Restock Cerdas** | Menganalisis laju penjualan 30 hari & memprediksi kapan stok akan habis |
 | **Laporan Tren Otomatis** | Menghasilkan narasi bisnis bulanan dalam Bahasa Indonesia |
+| **Graceful AI Degradation** | *Rule-based fallback* otomatis jika kuota AI habis, menjaga UI tetap berjalan |
 
 Kedua fitur AI berjalan di **Supabase Edge Functions (Deno/TypeScript)** — tidak ada komputasi AI di perangkat, menjaga konsumsi baterai dan RAM tetap rendah.
 
@@ -159,7 +160,6 @@ CI/CD Pipeline di GitHub Actions otomatis menjalankan:
 1. `flutter analyze` (linting)
 2. `flutter test` (unit & widget tests)
 3. `flutter build apk --release` (pada push ke `main`)
-4. Deploy APK ke Supabase Storage
 
 ---
 
@@ -167,20 +167,21 @@ CI/CD Pipeline di GitHub Actions otomatis menjalankan:
 
 ```
 lib/
-├── main.dart               # Entry point, routing, tema
-├── auth_service.dart       # Supabase Auth + session management
-├── dashboard_screen.dart   # Dashboard utama + AI restock card
-├── dashboard_service.dart  # Data fetching + Realtime subscription
-├── dashboard_models.dart   # Model data dashboard & AI
-├── product_*.dart          # Modul inventaris produk
-├── debt_*.dart             # Modul kasbon & pelanggan
-├── report_screen.dart      # Laporan + tab AI Cerdas (Gemini)
-├── report_service.dart     # Export CSV/PDF + AI report API
-└── onboarding_screen.dart  # Alur pilihan peran pengguna baru
+├── core/                   # Utilitas inti, autentikasi, & konfigurasi database
+├── features/               # Arsitektur Feature-First (MVVM)
+│   ├── dashboard/          # Layar utama & integrasi card prediksi AI
+│   ├── debts/              # Manajemen pelanggan dan kasbon
+│   ├── inventory/          # Manajemen produk dan pencatatan stok
+│   ├── onboarding/         # Login dan pemilihan peran (Admin/Kasir)
+│   ├── reports/            # Laporan keuangan & narasi otomatis Gemini AI
+│   ├── sales/              # Point of Sale (PoS) kasir
+│   └── settings/           # Pengaturan pengguna & karyawan
+└── main.dart               # Entry point, routing, & tema Material 3 modern
 
 supabase/functions/
-├── restock-prediction/     # Edge Function: AI prediksi stok
-└── ai-monthly-report/      # Edge Function: laporan tren teks AI
+├── restock-prediction/     # Edge Function: Prediksi stok (termasuk rule-based fallback)
+└── ai-monthly-report/      # Edge Function: Laporan naratif bulanan (Gemini Flash)
+
 
 sql/                        # Database migrations & RLS policies
 test/                       # Unit & widget tests
