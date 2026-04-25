@@ -4,7 +4,7 @@ import 'package:mockito/mockito.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:warung_pintar/product_service.dart';
+import 'package:warung_pintar/features/inventory/providers/product_service.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 

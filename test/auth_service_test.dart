@@ -4,7 +4,7 @@ import 'package:mockito/mockito.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:warung_pintar/auth_service.dart';
+import 'package:warung_pintar/core/auth/auth_service.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {
   final GoTrueClient mockAuth;

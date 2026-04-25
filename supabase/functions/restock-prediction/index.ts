@@ -119,9 +119,32 @@ Maksimal 5 rekomendasi, urutkan dari yang paling urgent.`;
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error(`AI Prediction Error: ${error.message}. Falling back to rule-based algorithm.`);
+    
+    // Fallback Rule-Based Algorithm
+    // If AI fails, we rely on the lowStockProducts array fetched earlier.
+    // We recommend restocking up to 2x the minimum stock.
+    const fallbackRecommendations = (lowStockProducts || [])
+      .map((p: any) => ({
+        product_name: p.name,
+        current_stock: p.stock,
+        daily_avg_sales: 0, // Unknown without AI deep analysis
+        days_until_empty: 0,
+        suggested_restock_qty: (p.min_stock * 2) || 10,
+        urgency: p.stock <= 0 ? "critical" : "soon",
+        reason: "Sistem Dasar: Stok di bawah batas aman."
+      }))
+      .slice(0, 5); // Limit to top 5 most urgent
+
+    const fallbackResult = {
+      recommendations: fallbackRecommendations,
+      summary: "Sistem AI sedang sibuk. Menampilkan rekomendasi stok berdasarkan perhitungan sistem dasar.",
+      top_selling: "-"
+    };
+
     return new Response(
-      JSON.stringify({ error: error.message, recommendations: [], summary: "Gagal menganalisis data." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify(fallbackResult),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

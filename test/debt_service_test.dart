@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:warung_pintar/debt_models.dart';
+import 'package:warung_pintar/features/debts/models/debt_models.dart';
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 void main() {

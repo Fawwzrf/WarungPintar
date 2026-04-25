@@ -4,16 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'auth_service.dart';
-import 'login_screen.dart';
-import 'customer_list_screen.dart';
-import 'product_list_screen.dart';
-import 'dashboard_screen.dart';
-import 'report_screen.dart';
-import 'settings_screen.dart';
-import 'onboarding_screen.dart';
+import 'package:warung_pintar/core/auth/auth_service.dart';
+import 'package:warung_pintar/features/onboarding/views/login_screen.dart';
+import 'package:warung_pintar/features/debts/views/customer_list_screen.dart';
+import 'package:warung_pintar/features/inventory/views/product_list_screen.dart';
+import 'package:warung_pintar/features/dashboard/views/dashboard_screen.dart';
+import 'package:warung_pintar/features/reports/views/report_screen.dart';
+import 'package:warung_pintar/features/settings/views/settings_screen.dart';
+import 'package:warung_pintar/features/onboarding/views/onboarding_screen.dart';
 
-// [CRIT-01 FIX] Credentials injected via --dart-define at build time.
+// Credentials are injected at build time via --dart-define for security.
+// Never hardcode these values in source code.
 const _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
@@ -28,14 +29,12 @@ class StoreMembership {
   bool get isCashier => role == 'cashier';
 }
 
-// ──────────────────────────────────────────────
-// storeMembershipProvider
-// Key design decisions:
-// 1. Cache is keyed by user.id so multiple users on same device don't bleed into each other.
-// 2. On success, always write fresh data to cache.
-// 3. On error (offline), fall back to cache for same user only.
-// 4. Returns null only if user has NO membership at all → triggers Onboarding.
-// ──────────────────────────────────────────────
+/// Provides the [StoreMembership] for the currently authenticated user.
+///
+/// Cache is keyed by [User.id] to prevent role data from bleeding between
+/// different accounts on the same device. Falls back to cached data when
+/// offline. Returns `null` when the user has no store membership, which
+/// triggers the onboarding flow.
 final storeMembershipProvider = FutureProvider<StoreMembership?>((ref) async {
   final user = Supabase.instance.client.auth.currentUser;
   if (user == null) return null;
@@ -49,7 +48,7 @@ final storeMembershipProvider = FutureProvider<StoreMembership?>((ref) async {
         .from('store_members')
         .select('role, store_id')
         .eq('user_id', user.id)
-        .order('role', ascending: true) // 'admin' < 'cashier' alphabetically → always prefer admin
+        .order('role', ascending: true) // alphabetical: 'admin' < 'cashier' — always prefers admin role
         .limit(1)
         .maybeSingle();
 
@@ -65,8 +64,7 @@ final storeMembershipProvider = FutureProvider<StoreMembership?>((ref) async {
     // User is authenticated but has no store membership → show Onboarding
     return null;
   } catch (e) {
-    debugPrint('[RBAC] Membership fetch error: $e — falling back to cache');
-    // [RBAC-FIX] Only use cache for THIS user
+    debugPrint('storeMembershipProvider: fetch error ($e) — using cached data');
     final cached = box.get(cacheKey);
     if (cached != null) {
       return StoreMembership(
@@ -117,12 +115,11 @@ class WarungPintarApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authServiceProvider);
 
-    // [RBAC-FIX] Invalidate membership data each time the user logs in/out
-    // so stale data never persists from a previous session
+    // Invalidate cached membership whenever a new user logs in to prevent
+    // stale role data from persisting across sessions.
     ref.listen(authServiceProvider, (prev, next) {
       final prevUser = prev?.valueOrNull;
       final nextUser = next.valueOrNull;
-      // User just logged in (was null, now has value)
       if (prevUser == null && nextUser != null) {
         ref.invalidate(storeMembershipProvider);
       }
@@ -132,23 +129,77 @@ class WarungPintarApp extends ConsumerWidget {
       title: 'WarungPintar Lite',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.light),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6750A4), brightness: Brightness.light),
         useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.grey.shade50,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF6750A4), width: 2)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
+            elevation: 0,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
+        navigationBarTheme: const NavigationBarThemeData(
+          elevation: 0,
+          indicatorColor: Color(0xFFEADDFF),
+        ),
       ),
       darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD0BCFF), brightness: Brightness.dark),
         useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: const Color(0xFF1C1B1F),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade800),
+          ),
+          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.grey.shade900,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD0BCFF), width: 2)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
+            elevation: 0,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
+        ),
+        navigationBarTheme: const NavigationBarThemeData(
+          elevation: 0,
+          indicatorColor: Color(0xFF4A4458),
         ),
       ),
       themeMode: ThemeMode.system,
@@ -210,8 +261,8 @@ class _MainNavigationHubState extends ConsumerState<MainNavigationHub> {
     final membershipAsync = ref.watch(storeMembershipProvider);
     final isOnline = ref.watch(connectivityProvider);
 
-    // [RBAC-FIX] If this is a brand-new signup, always show Onboarding
-    // regardless of whether the SQL trigger created a membership already
+    // New signups always go through onboarding to choose their role,
+    // even if a database trigger created a default membership.
     final authNotifier = ref.read(authServiceProvider.notifier);
     if (authNotifier.isNewUser) {
       authNotifier.clearNewUserFlag();
@@ -246,7 +297,8 @@ class _MainNavigationHubState extends ConsumerState<MainNavigationHub> {
           const NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Pengaturan'),
         ];
 
-        // Guard: prevent index out-of-bounds if role changes mid-session
+        // Safety guard: reset tab index when the screen list changes length
+        // (e.g. when a cashier becomes admin or vice versa mid-session).
         if (_currentIndex >= screens.length) {
           _currentIndex = 0;
         }

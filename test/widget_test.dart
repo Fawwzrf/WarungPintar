@@ -1,14 +1,10 @@
-// Widget test for WarungPintar
-//
-// Uses Fake classes instead of Mockito to avoid complex mock generation
-// and Supabase initialization requirements during testing.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:warung_pintar/auth_service.dart';
+import 'package:warung_pintar/core/auth/auth_service.dart';
 import 'package:warung_pintar/main.dart';
 
 // ──────────────────────────────────────────────
