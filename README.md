@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏪 WarungPintar Lite v2.0
+# WarungPintar Lite v2.0
 
 **Aplikasi manajemen toko digital untuk UMKM Indonesia — didukung oleh AI.**
 
@@ -14,7 +14,7 @@
 
 ---
 
-## 📌 Tentang Proyek
+## Tentang Proyek
 
 **WarungPintar Lite v2.0** adalah aplikasi manajemen toko kelontong dan UMKM yang dibangun di atas stack modern: **Flutter + Supabase + Google Gemini**. Proyek ini menggambarkan integrasi end-to-end antara aplikasi mobile dan layanan AI cloud — dari pengumpulan data transaksi real-time hingga menghasilkan laporan bisnis otomatis dalam Bahasa Indonesia menggunakan LLM.
 
@@ -26,9 +26,9 @@ Mayoritas pemilik warung di Indonesia (64 juta UMKM) masih mencatat stok dan piu
 
 ---
 
-## ✨ Fitur Utama
+## Fitur Utama
 
-### 🤖 AI-Powered (via Google Gemini)
+### AI-Powered (via Google Gemini)
 | Fitur | Deskripsi |
 |-------|-----------|
 | **Prediksi Restock Cerdas** | Menganalisis laju penjualan 30 hari & memprediksi kapan stok akan habis |
@@ -37,36 +37,36 @@ Mayoritas pemilik warung di Indonesia (64 juta UMKM) masih mencatat stok dan piu
 
 Kedua fitur AI berjalan di **Supabase Edge Functions (Deno/TypeScript)** — tidak ada komputasi AI di perangkat, menjaga konsumsi baterai dan RAM tetap rendah.
 
-### 📦 Manajemen Inventaris
+### Manajemen Inventaris
 - CRUD produk lengkap dengan foto (Supabase Storage)
 - Manajemen stok real-time via WebSocket (Supabase Realtime)
 - Riwayat mutasi stok dengan aktor & timestamp
 - Pencarian produk real-time (debounce 300ms)
 
-### 💳 Buku Kasbon Digital
+### Buku Kasbon Digital
 - Multi-item transactions dengan validasi batas kredit
 - Status cicilan/pelunasan dengan riwayat pembayaran
 - Pengingat via WhatsApp (deep link)
 
-### 📊 Laporan & Ekspor
+### Laporan & Ekspor
 - Dashboard ringkasan dengan grafik penjualan 7 hari (fl_chart)
 - Laporan penjualan & kasbon
 - Ekspor ke **CSV** & **PDF** + share via WhatsApp
 
-### 🔐 Auth & RBAC
+### Auth & RBAC
 - Supabase Auth (email/password) dengan JWT
 - **Row Level Security** di database level — bukan hanya gate UI
 - Dua peran: **Admin (Pemilik)** vs **Kasir** dengan hak akses berbeda
 - Auto-logout setelah 1 jam tidak aktif
 
-### 📶 Offline-First
+### Offline-First
 - Cache lokal menggunakan **Hive** (NoSQL) yang diisolasi per user ID
 - Indikator status koneksi real-time
 - Fallback ke data cache saat tidak ada jaringan
 
 ---
 
-## 🏗️ Arsitektur Sistem
+## Arsitektur Sistem
 
 ```
 ┌────────────────────────────────────────────────────┐
@@ -86,7 +86,7 @@ Kedua fitur AI berjalan di **Supabase Edge Functions (Deno/TypeScript)** — tid
               └─────────────┘
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Teknologi |
 |-------|-----------|
@@ -104,7 +104,7 @@ Kedua fitur AI berjalan di **Supabase Edge Functions (Deno/TypeScript)** — tid
 
 ---
 
-## 🚀 Cara Menjalankan
+## Cara Menjalankan
 
 ### Prasyarat
 - Flutter SDK ≥ 3.9
@@ -163,7 +163,7 @@ CI/CD Pipeline di GitHub Actions otomatis menjalankan:
 
 ---
 
-## 📁 Struktur Proyek
+## Struktur Proyek
 
 ```
 lib/
@@ -189,7 +189,7 @@ test/                       # Unit & widget tests
 
 ---
 
-## 📄 Lisensi
+## Lisensi
 
 MIT License — bebas digunakan untuk portofolio dan pembelajaran.
 
